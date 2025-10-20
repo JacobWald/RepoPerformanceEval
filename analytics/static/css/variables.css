@@ -1,0 +1,24 @@
+/* To access, at the top of your css file write @import url('variables.css');
+Then, when selecting a color, use var(--color-primary)*
+Ex.
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+*/
+:root {
+  /* brand palette */
+  --color-primary: #004aad;
+  --color-secondary: #ffcc00;
+  --color-accent: #28a745;
+
+  /* neutrals */
+  --color-bg: #f9f9f9;
+  --color-text: #222;
+  --color-muted: #666;
+
+  /* status colors */
+  --color-success: #4caf50;
+  --color-warning: #ffc107;
+  --color-error: #e53935;
+}
