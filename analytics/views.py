@@ -1,8 +1,7 @@
 from django.shortcuts import render
-from django.http import JsonResponse
 
 # Create your views here.
 
 
 def index(request):
-    return JsonResponse({"message": "Welcome to the Repo Performance Evaluation Analytics Tool!"})
+    return render(request, 'analytics/index.html')
