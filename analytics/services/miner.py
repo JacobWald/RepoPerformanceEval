@@ -1,16 +1,28 @@
 import sys
 import git
 import os
-import git
 import json
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, Counter
+from urllib.parse import urlparse
+from dotenv import load_dotenv
+load_dotenv()
+
 from pydriller import Repository
 from tqdm import tqdm
-from urllib.parse import urlparse
+
+#GitHub CI service
+from github_ci import (
+    owner_from_url,
+    fetch_workflow_runs_covering,
+    summarize_runs_by_sha,
+)
 
 performanceData = {}
 
+# -----------------------------
+# Helpers
+# -----------------------------
 def repo_name_from_url(url: str) -> str:
     path = urlparse(url).path         
     name = path.rstrip("/").split("/")[-1]
@@ -18,6 +30,21 @@ def repo_name_from_url(url: str) -> str:
         name = name[:-4]
     performanceData["repo_name"] = name
     return name
+
+def ensure_repo_fresh(dest):
+    """
+    If repo already exists, fetch latest refs so PyDriller sees
+    all recent commits (no checkout/reset needed).
+    """
+    try:
+        repo = git.Repo(dest)
+        # fetch + prune removes stale remote refs
+        repo.git.fetch("--all", "--prune")
+        # optional: fetch tags too
+        repo.git.fetch("--tags", "--prune")
+        print("↪ Updated existing clone (fetch --all --prune).")
+    except Exception as e:
+        print(f"⚠ Failed to update existing repo: {e}")
 
 def weekday_name(dt):
     return dt.strftime("%A")  # e.g., 'Monday'
@@ -49,15 +76,24 @@ def compute_average_streak(unique_dates_sorted):
     streaks.append(current_streak)
     return sum(streaks) / len(streaks)
 
+
+# -----------------------------
+# Main
+# -----------------------------
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python script.py <repo_url_or_textfile_url>")
+        print("Usage: python script.py <repo_url>")
         sys.exit(1)
+
+    days_env = os.getenv("MINER_DAYS", "90")
+    try:
+        DAYS = max(1, int(days_env))
+    except ValueError:
+        DAYS = 90
 
     repoLink = sys.argv[1].strip()
     repo_dir = repo_name_from_url(repoLink)
     dest = os.path.join(".", "cloned_repos", repo_dir)
-
     os.makedirs(dest, exist_ok=True)
 
     print(f"Cloning repo {repoLink} into {dest}...")
@@ -65,6 +101,8 @@ def main():
 
     if os.path.isdir(git_dir):
         print(f"↪ Already exists at {dest}, skipping clone.\n")
+        ensure_repo_fresh(dest)
+        print()
     else:
         try:
             git.Repo.clone_from(repoLink, dest)
@@ -85,28 +123,126 @@ def main():
         "mining_params": {
             "source": "PyDriller",
             "in_main_branch_only": False,
+            "days_window": DAYS,
         },
-        "authors": []  # will be filled after aggregation
+        "authors": []
     }
 
     # Author aggregator keyed by (name, email)
-    authors = {}  # (name,email) -> dict
+    authors = {}
 
-    since = datetime.now() - timedelta(days=365)  # last 10 years
-    total_commits = sum(1 for _ in Repository(dest, since=since).traverse_commits())
-    repo = Repository(dest, since=since)
+    # -----------------------------
+    # First pass: gather SHAs within window (naive/UTC-naive for PyDriller filter)
+    # -----------------------------
+    since_for_repo = datetime.now() - timedelta(days=DAYS)
+
+    target_shas = set()
     earliest = None
     latest = None
+    total_commits = 0
 
-    for commit in tqdm(repo.traverse_commits(), total=total_commits, desc="Analyzing commits", unit="commit"):
-
-        # Track mining time bounds (using author_date by default)
-        ad = commit.author_date
+    repo_pass1 = Repository(dest, since=since_for_repo)
+    for c in repo_pass1.traverse_commits():
+        total_commits += 1
+        target_shas.add(c.hash)
+        ad = c.author_date
         if earliest is None or ad < earliest:
             earliest = ad
         if latest is None or ad > latest:
             latest = ad
 
+    if total_commits == 0:
+        print("No commits found in the specified window. Exiting.")
+        out_path = os.path.join(dest, "analytics.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        print(f"✓ Wrote empty analytics to: {out_path}")
+        return
+    
+    # Normalize earliest to timezone-aware UTC for CI paging cutoff
+    if earliest.tzinfo is None:
+        cutoff_dt = earliest.replace(tzinfo=timezone.utc)
+    else:
+        cutoff_dt = earliest.astimezone(timezone.utc)
+
+    # -----------------------------
+    # Prefetch CI runs until coverage or cutoff
+    # -----------------------------
+    owner = owner_from_url(repoLink)
+    HARD_PAGE_CAP = int(os.getenv("CI_HARD_PAGE_CAP", "100"))  # tune as needed for huge repos
+
+    print("\n🔍 Fetching workflow runs from GitHub (dynamic coverage)…")
+    print(f"  Repo: {owner}/{repo_dir}")
+    print(f"  Targeting last {DAYS} days of commits (~{len(target_shas)} SHAs)")
+    print(f"  Page cap: {HARD_PAGE_CAP}\n")
+
+    ci_runs, covered = [], set()
+    pbar = tqdm(desc="CI pages", unit="page")
+    current_event = None
+
+    def _on_ci_page(page, page_runs, total_runs, covered_count):
+
+        pbar.update(1)
+
+        pbar.set_postfix_str(
+            f"event={current_event}  page={page}  "
+            f"new_runs={page_runs}  total={total_runs}  "
+            f"covered={covered_count}/{len(target_shas)}"
+        )
+
+    # -----------------------------
+    # Fetch both push and PR CI runs
+    # -----------------------------
+    ci_runs, covered = [], set()
+
+    # Push events
+    current_event = "push"
+    print(f"  • Fetching event={current_event} …")
+    push_runs, push_covered = fetch_workflow_runs_covering(
+        owner=owner,
+        repo=repo_dir,
+        cutoff_dt=cutoff_dt,
+        target_shas=target_shas,
+        hard_page_cap=HARD_PAGE_CAP,
+        on_page=_on_ci_page,
+        event="push",
+    )
+
+    # PR events
+    current_event = "pull_request"
+    print(f"\n  • Fetching event={current_event} …")
+    pr_runs, pr_covered = fetch_workflow_runs_covering(
+        owner=owner,
+        repo=repo_dir,
+        cutoff_dt=cutoff_dt,
+        target_shas=target_shas,
+        hard_page_cap=HARD_PAGE_CAP,
+        on_page=_on_ci_page,
+        event="pull_request",
+    )
+
+    # Merge results
+    ci_runs = push_runs + pr_runs
+    covered = push_covered | pr_covered
+
+    pbar.close()
+
+    print(f"\n✅ Completed CI fetch: {len(ci_runs)} total runs covering {len(covered)} / {len(target_shas)} SHAs.\n")
+
+    ci_index = summarize_runs_by_sha(ci_runs)
+
+    # -----------------------------
+    # Second pass: traverse commits and build records with CI info
+    # -----------------------------
+    repo_pass2 = Repository(dest, since=since_for_repo)
+    for commit in tqdm(
+        repo_pass2.traverse_commits(), 
+        total=total_commits, 
+        desc="Analyzing commits", 
+        unit="commit"
+    ):
+
+        ad = commit.author_date
         author_name = commit.author.name if commit.author and commit.author.name else "Unknown"
         author_email = commit.author.email if commit.author and commit.author.email else "unknown@example.com"
         key = (author_name, author_email)
@@ -119,8 +255,20 @@ def main():
                 "commits": [],
                 # Aggregations
                 "weekly_frequency": defaultdict(int),   # YYYY-Www -> count
-                "weekday_frequency": Counter({day: 0 for day in
-                                              ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]}),
+                "weekday_frequency": Counter(
+                    {
+                        day: 0 
+                        for day in [
+                            "Monday",
+                            "Tuesday",
+                            "Wednesday",
+                            "Thursday",
+                            "Friday",
+                            "Saturday",
+                            "Sunday"
+                        ]
+                    }
+                ),
                 "daily_frequency": defaultdict(int),    # YYYY-MM-DD -> count
                 "total_insertions": 0,
                 "total_deletions": 0,
@@ -134,6 +282,11 @@ def main():
         week_bucket = iso_week_bucket(ad)
         day_key = date_str(ad)
         files_changed = len(commit.modified_files)
+
+        # CI attachment (from runs index)
+        ci = None
+        if commit.hash in ci_index:
+            ci = ci_index[commit.hash]
 
         commit_record = {
             "hash": commit.hash,
@@ -153,10 +306,9 @@ def main():
             "insertions": commit.insertions or 0,
             "deletions": commit.deletions or 0,
             "files_changed": files_changed,
-            # Temporal features
             "author_hour": author_hour,                 # 0-23
             "author_weekday": author_weekday,          # Monday..Sunday
-            # File-level details (diff overview)
+            "ci": ci or {"has_actions_runs": False},
         }
 
         authors[key]["commits"].append(commit_record)
@@ -170,7 +322,9 @@ def main():
         authors[key]["total_files_changed"] += files_changed
         authors[key]["commit_dates_set"].add(day_key)
 
-    # Finalize author aggregates (convert structures & compute average streaks)
+    # -----------------------------
+    # Finalize aggregates
+    # -----------------------------
     finalized_authors = []
     for (_name, _email), data in authors.items():
         # Average streak days
