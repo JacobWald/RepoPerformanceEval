@@ -97,3 +97,29 @@ Simply run the following command:
 ```bash
 python manage.py runserver
 ```
+
+## Setting up the ENV
+In the main directory, creat a file called .env
+Within that file, add the follow structure:
+
+```bash
+# ──────────────
+# 🧑‍💻 GITHUB API CONFIG
+# ──────────────
+GITHUB_TOKEN=your_token
+MINER_DAYS=45                   
+CI_HARD_PAGE_CAP=100   
+```
+
+You will need to generate a personal access token on GitHub with 
+the following permissions: public_repo and read:org. After
+generating this token, replace your_token in the .env with it
+
+If you wish to run the repository miner script seperately to generate
+the json of repo analysis data, run the command:
+
+```bash
+python analytics/services/miner.py https://github.com/tensorflow/tensorflow
+```
+
+Feel free to replace the tensorflow github url with any other public repository.
