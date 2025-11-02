@@ -1,11 +1,8 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Analytics Dashboard</title>
-    <link rel="stylesheet" href="{% static 'css/index.css' %}">
-</head>
-<body>
+{% extends "analytics/base.html" %}
+
+{% block title %}Home | Analytics Dashboard{% endblock %}
+
+{% block content %}
     <h1>Welcome to the Analytics Dashboard</h1>
-</body>
-</html>
+    <p>Here you’ll be able to visualize commit performance, CI results, and trends.</p>
+{% endblock %}

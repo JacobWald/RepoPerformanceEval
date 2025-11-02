@@ -1,3 +1,32 @@
-h1 {
-    color:blueviolet
+@import url('variables.css');
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--color-secondary-alt);
+    color: var(--color-primary);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-primary);
+    color: var(--color-secondary-alt);
+    padding: 12px 24px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.navbar a {
+    color: var(--color-secondary-alt);
+    text-decoration: none;
+    margin-left: 16px;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+
+main {
+    padding: 24px;
 }
