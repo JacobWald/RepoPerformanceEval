@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Analytics Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="{% url 'index' %}" class="nav-logo">RepoPerformanceEval</a>
+        </div>
+        <div class="navbar-right">
+            <a href="{% url 'index' %}">Home</a>
+            <a href="#">Reports</a>
+            <a href="#">Settings</a>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        <!-- Each page injects content here -->
+        {% endblock %}
+    </main>
+</body>
+</html>

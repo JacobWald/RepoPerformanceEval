@@ -8,17 +8,8 @@ body {
 */
 :root {
   /* brand palette */
-  --color-primary: #004aad;
-  --color-secondary: #ffcc00;
-  --color-accent: #28a745;
-
-  /* neutrals */
-  --color-bg: #f9f9f9;
-  --color-text: #222;
-  --color-muted: #666;
-
-  /* status colors */
-  --color-success: #4caf50;
-  --color-warning: #ffc107;
-  --color-error: #e53935;
+  --color-primary: #555879;
+  --color-primary-alt: #98A1BC;
+  --color-secondary: #DED3C4;
+  --color-secondary-alt: #F4EBD3;
 }
