@@ -1,0 +1,11 @@
+﻿{% extends "analytics/base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h2>Analyze a repository</h2>
+<form method="post" action="{% url 'analyze_repo' %}">
+  {% csrf_token %}
+  <input name="repo_url" placeholder="https://github.com/owner/repo" style="width:28rem" required>
+  <button type="submit">Analyze</button>
+</form>
+<p><a href="{% url 'logout' %}">Log out</a></p>
+{% endblock %}

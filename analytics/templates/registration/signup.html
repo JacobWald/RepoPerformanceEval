@@ -1,13 +1,29 @@
-﻿<!-- templates/registration/signup.html -->
-{% extends "base.html" %}
-
+﻿{% extends "analytics/base.html" %}
 {% block title %}Sign Up{% endblock %}
-
 {% block content %}
-<h2>Sign up</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form }}
-    <button type="submit">Sign Up</button>
+<h2>Create your account</h2>
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div>
+    <label>Username</label>
+    {{ form.username }} {{ form.username.errors }}
+  </div>
+  <div>
+    <label>Email</label>
+    {{ form.email }} {{ form.email.errors }}
+  </div>
+  <div>
+    <label>Password</label>
+    {{ form.password1 }} {{ form.password1.errors }}
+  </div>
+  <div>
+    <label>Confirm password</label>
+    {{ form.password2 }} {{ form.password2.errors }}
+  </div>
+
+  <button type="submit">Sign Up</button>
 </form>
+<p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
 {% endblock %}
