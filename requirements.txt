@@ -19,3 +19,4 @@ types-pytz==2025.2.0.20250809
 typing_extensions==4.15.0
 tzdata==2025.2
 wheel==0.45.1
+supabase>=2,<3
