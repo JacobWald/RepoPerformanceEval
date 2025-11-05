@@ -1,9 +1,18 @@
-
 {% extends "analytics/base.html" %}
 
 {% block title %}Home | Analytics Dashboard{% endblock %}
 
 {% block content %}
-    <h1>Welcome to the Analytics Dashboard</h1>
-    <p>Here you’ll be able to visualize commit performance, CI results, and trends.</p>
+<h1>Welcome to the Analytics Dashboard</h1>
+<p>Here you’ll be able to visualize commit performance, CI results, and trends.</p>
+    {% if user.is_authenticated %}
+<p>Hi {{ user.username }}!</p>
+<p><a href="registration\password_change_form.html">Password Change</a></p>
+<p><a href="{% url 'login' %}">Log Out</a></p>
+    {% else %}
+<p>You are not logged in</p>
+<p><a href="{% url 'password_reset' %}">Password Reset</a></p>
+<p><a href="{% url 'login' %}">Log In</a></p>
+    {% endif %}
 {% endblock %}
+
