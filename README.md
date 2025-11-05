@@ -118,6 +118,28 @@ generating this token, replace your_token in the .env with it
 If you wish to run the repository miner script seperately to generate
 the json of repo analysis data, run the command:
 
+## Setting up Supabase
+
+### Installation
+    - pip install -r requirements.txt
+    - pip install psycopg2-binary python-dotenv supabase
+
+### Update the .env file
+  - Add the required config and tokens in .env file.
+
+### Run the server
+  - python manage.py migrate
+  - python manage.py runserver
+
+## Table Info
+
+### Repositories table
+
+  - This table is your “catalog of repos.” Each repo has an owner and a UUID. That UUID is the prefix we’ll use in Storage paths.
+
+### 
+  - This will log every JSON upload tied to a repo. one repo can have many json with it, this table provides info about repo and its storage json path.
+
 ```bash
 python analytics/services/miner.py https://github.com/tensorflow/tensorflow
 ```
