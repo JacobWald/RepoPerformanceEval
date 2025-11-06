@@ -110,7 +110,7 @@ def logout_view(request):
 @require_supabase_login
 def home(request):
     user = request.session.get("sb_user")  # {'id': <uuid>, 'email': ..., 'user_metadata': {...}}
-    return render(request, "home.html", {"user": user})
+    return render(request, "analytics/home.html", {"user": user})
 
 
 # --------------------------- ANALYZE REPO (protected) ---------------------------
