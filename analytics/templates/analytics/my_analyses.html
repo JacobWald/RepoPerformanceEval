@@ -1,0 +1,27 @@
+{% extends "analytics/base.html" %}
+{% block title %}My Analyses{% endblock %}
+{% block content %}
+<h1>My Analyses</h1>
+{% if analyses %}
+  <table>
+    <thead>
+      <tr>
+        <th>Repo</th>
+        <th>Mined At</th>
+        <th>JSON</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in analyses %}
+      <tr>
+        <td>{{ a.repository.name }}</td>
+        <td>{{ a.mined_at }}</td>
+        <td><a href="{{ a.json_url }}" target="_blank" rel="noopener">Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No analyses yet. Run one from <a href="{% url 'home' %}">Home</a>.</p>
+{% endif %}
+{% endblock %}

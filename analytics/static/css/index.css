@@ -27,6 +27,26 @@ body {
     text-decoration: underline;
 }
 
+.nav-button {
+    all: unset;
+    background: transparent !important;
+    border: 0;
+    padding: 0;            
+    margin-left: 16px;      
+    color: var(--color-secondary-alt);
+    font: inherit;          /* same font/size as links */
+    line-height: 1;         /* avoid tall button box */
+    cursor: pointer;
+    vertical-align: middle; /* align baseline with links */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.nav-button:hover {
+    text-decoration: underline;
+}
+
 main {
     padding: 24px;
 }
+

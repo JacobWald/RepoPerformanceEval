@@ -1,0 +1,27 @@
+{% extends "analytics/base.html" %}
+{% block title %}Analyzing…{% endblock %}
+{% block content %}
+<h2>Analyzing…</h2>
+<pre id="log" style="background:#111;color:#0f0;padding:1rem;max-height:300px;overflow:auto;"></pre>
+<script>
+const logEl = document.getElementById('log');
+const es = new EventSource("{% url 'progress_stream' job_id=job_id %}");
+es.onmessage = (e) => {
+  logEl.textContent += e.data + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+};
+es.addEventListener("finished", (e) => {
+  try {
+    const payload = JSON.parse(e.data);
+    if (payload.ok && payload.public_url) {
+      logEl.textContent += "\nUploaded: " + payload.public_url + "\n";
+    } else {
+      logEl.textContent += "\nJob finished with errors.\n";
+    }
+  } catch (_) {}
+  es.close();
+  // optional redirect:
+  // setTimeout(() => { window.location = "{% url 'my_analyses' %}" }, 1200);
+});
+</script>
+{% endblock %}

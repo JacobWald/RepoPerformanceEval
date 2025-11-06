@@ -11,15 +11,17 @@
 <body>
     <nav class="navbar">
         <div class="navbar-left">
-            <a href="{% url 'signup' %}" class="nav-logo">RepoPerformanceEval</a>
+            <a href="{% url 'home' %}" class="nav-logo">RepoPerformanceEval</a>
         </div>
         <div class="navbar-right">
-            <a href="{% url 'signup' %}">Home</a>
-            <a href="#">Reports</a>
-            {% if user.is_authenticated %}
-            <button type="Log Out">Log Out</button>
+            {% if sb_authenticated %}
+                <a href="{% url 'my_analyses' %}">My Analyses</a>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-button">Log Out</button>
+                </form>
             {% else %}
-            <button type="Log In" href="registration\login.html">Log In</button>
+                <a href="{% url 'login' %}">Log In</a>
             {% endif %}
         </div>
     </nav>

@@ -18,6 +18,12 @@ from github_ci import (
     summarize_runs_by_sha,
 )
 
+import sys, io
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
 performanceData = {}
 
 # -----------------------------
