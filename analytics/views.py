@@ -34,6 +34,11 @@ def require_supabase_login(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
+def landing(request):
+    if request.session.get("sb_authenticated") or request.session.get("sb_user"):
+        return redirect("home")
+    return render(request, "analytics/index.html")
+
 
 # --------------------------- SIGN UP ---------------------------
 def signup(request):

@@ -1,0 +1,49 @@
+@import url('../css/variables.css');
+
+img{
+    width: 100%
+}
+
+.left-panel{
+  flex: 0 0 50%;
+  max-width: 50%;
+
+}
+
+.wrapper{
+    display: flex;
+    align-items: center;
+    gap: 5rem;
+}
+
+.right-panel p {
+    margin: 0 0 1.25rem 0;
+    font-style: italic;
+    line-height: 2;
+    max-width: 62ch;
+    color: var(--color-primary);
+  }
+
+  .right-panel h1 {
+    font-family: "Inter Tight", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+.btn {
+    display: inline-block;
+    padding: .65rem 1.1rem;
+    border-radius: .4rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform .06s ease, box-shadow .12s ease, background-color .15s ease;
+  }
+  
+  .btn-primary {
+    color: #fff;
+    background-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    border: 1px solid transparent;
+  }
+

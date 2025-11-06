@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Analytics Dashboard{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <nav class="navbar">
@@ -13,7 +14,6 @@
             <a href="{% url 'home' %}" class="nav-logo">RepoPerformanceEval</a>
         </div>
         <div class="navbar-right">
-            <a href="{% url 'home' %}">Home</a>
             {% if sb_authenticated %}
                 <a href="{% url 'my_analyses' %}">My Analyses</a>
                 <form method="post" action="{% url 'logout' %}" style="display:inline;">
