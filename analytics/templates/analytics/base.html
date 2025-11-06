@@ -15,10 +15,11 @@
         <div class="navbar-right">
             <a href="{% url 'signup' %}">Home</a>
             <a href="#">Reports</a>
-            <a href="#">Settings</a>
-            <button type="Log In" href="registration\login.html">Log In</button>
+            {% if user.is_authenticated %}
             <button type="Log Out">Log Out</button>
-            <button type="Sign Up" href="registration\signup.html">Sign Up</button>
+            {% else %}
+            <button type="Log In" href="registration\login.html">Log In</button>
+            {% endif %}
         </div>
     </nav>
 

@@ -82,6 +82,8 @@ DATABASES = {
         "HOST": os.getenv("PGHOST"),
         "PORT": os.getenv("PGPORT", "5432"),
         "OPTIONS": {"sslmode": "require"},  # Supabase requires SSL
+        #"OPTIONS": {"sslmode": "require"} if "supabase.co" in os.getenv("PGHOST", "") else {},
+
     }
 }
 
