@@ -8,14 +8,12 @@ from pathlib import Path
 import os
 
 # --- Load .env (requires python-dotenv) ---
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    pass
+from pathlib import Path
+import os
+from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # --- Security / Debug ---
 # Keep secrets in .env for safety
@@ -59,6 +57,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "analytics.context.supabase_auth",
             ],
         },
     },
