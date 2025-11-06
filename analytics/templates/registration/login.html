@@ -1,19 +1,37 @@
 ﻿{% extends "analytics/base.html" %}
+{% load static %}
+
 {% block title %}Log in{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'styles/login.css' %}">
+{% endblock %}
+
 {% block content %}
-<h2>Log in</h2>
-<form method="post" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
-  <div>
-    <label>Email</label>
-    {{ form.email }} {{ form.email.errors }}
+<section class="auth-wrap">
+  <div class="auth-card">
+    <h1>Log in</h1>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="field">
+        <label for="{{ form.email.id_for_label }}">Email</label>
+        {{ form.email }}
+        {{ form.email.errors }}
+      </div>
+
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Log in</button>
+    </form>
+
+    <p class="meta">Don’t have an account? <a href="{% url 'signup' %}">Sign up</a></p>
   </div>
-  <div>
-    <label>Password</label>
-    {{ form.password }} {{ form.password.errors }}
-  </div>
-  <button type="submit">Log in</button>
-</form>
-<p>Don’t have an account? <a href="{% url 'signup' %}">Sign up</a></p>
+</section>
 {% endblock %}
