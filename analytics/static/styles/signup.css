@@ -36,7 +36,8 @@
   }
   .field input[type="text"],
   .field input[type="email"],
-  .field input[type="password"] {
+  .field input[type="password"],
+  .field input[type="comfirm password"]{
     width: 90%;
     max-width: 320px;           /* Cap the max width */
     padding: .6rem .7rem;
