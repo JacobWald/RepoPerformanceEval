@@ -9,6 +9,7 @@ import os
 
 # --- Load .env (requires python-dotenv) ---
 from pathlib import Path
+import dj_database_url
 import os
 from dotenv import load_dotenv
 
@@ -73,18 +74,22 @@ WSGI_APPLICATION = "core.wsgi.application"
 # PGPASSWORD=<your db password>
 # PGDATABASE=postgres
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("PGDATABASE", "postgres"),
-        "USER": os.getenv("PGUSER"),
-        "PASSWORD": os.getenv("PGPASSWORD"),
-        "HOST": os.getenv("PGHOST"),
-        "PORT": os.getenv("PGPORT", "5432"),
-        "OPTIONS": {"sslmode": "require"},  # Supabase requires SSL
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,  # Supabase requires SSL
+    )
+        #"ENGINE": "django.db.backends.postgresql", postgresql://postgres:[YOUR_PASSWORD]@db.rkeulhxidaettlhcitgh.supabase.co:5432/postgres
+        #"NAME": os.getenv("PGDATABASE", "postgres"),
+        #"USER": os.getenv("PGUSER"),
+        #"PASSWORD": os.getenv("PGPASSWORD"),
+        #"HOST": os.getenv("PGHOST"),
+        #"PORT": os.getenv("PGPORT", "5432"),
+       # "OPTIONS": {"sslmode": "require"},  # Supabase requires SSL
         #"OPTIONS": {"sslmode": "require"} if "supabase.co" in os.getenv("PGHOST", "") else {},
 
-    }
 }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
