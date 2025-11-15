@@ -1,0 +1,97 @@
+@import url('../css/variables.css');
+.dashboard-container {
+    margin: auto;
+    padding: 0 1.25rem;
+  }
+  
+  /* Header section */
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: left; /* heading stays on the left */
+  }
+  
+  .dashboard-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 1rem;
+    color: var(--color-primary-alt);
+  }
+  
+  /* Repo summary card */
+  .repo-summary-card {
+    border-radius: 12px;
+    background: var(--color-secondary);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* .repo-summary-grid {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  } */
+  
+  .repo-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-primary-alt);
+  }
+  
+  .repo-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+  
+  .repo-url {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+    word-break: break-all;
+  }
+  
+  .repo-summary-meta {
+    font-size: 0.85rem;
+    color: var(--color-primary-alt);
+    align-self: flex-end;
+  }
+  
+  /* Tabs bar: buttons centered horizontally */
+  .dashboard-tabs {
+    display: flex;
+    justify-content: center;  /* ⬅️ buttons in the middle */
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    height: 2.5rem;
+  }
+  
+  /* Tab buttons */
+  .tab-button {
+    padding: 0.5rem 1.25rem;
+    border-radius: 2rem;
+    border: 1px solid var(--color-primary-alt);
+    background: #fff;
+    color: var(--color-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  
+  .tab-button:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+  }
+  
+  .tab-button--active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+  
+  

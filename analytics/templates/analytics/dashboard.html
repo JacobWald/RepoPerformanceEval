@@ -1,0 +1,80 @@
+{% extends "analytics/base.html" %}
+{% load static %}
+
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'styles/dashboard.css' %}">
+
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Repository Dashboard</h1>
+    <p class="dashboard-subtitle">GitHub URL analysis result</p>
+  </div>
+
+  <!-- Repo summary -->
+  <div class="repo-summary-card">
+    <div class="repo-summary-grid">
+      <div class="repo-summary-main">
+        <div class="repo-name">{{ repo.name }}</div>
+        <div class="repo-url">{{ repo.url }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="dashboard-tabs">
+    <button id="btn-overall" type="button" class="tab-button tab-button--active">
+      Overall Analysis Result
+    </button>
+
+    <button id="btn-devs" type="button" class="tab-button">
+      Developer-specific Analysis
+    </button>
+  </div>
+
+  <!-- Child content container -->
+  <div id="tab-content" class="tab-content">
+    <!-- Child HTML will be loaded here -->
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btnOverall = document.getElementById("btn-overall");
+    const btnDevs = document.getElementById("btn-devs");
+    const tabContent = document.getElementById("tab-content");
+
+    function setActiveButton(activeBtn) {
+      [btnOverall, btnDevs].forEach((btn) => {
+        if (btn === activeBtn) {
+          btn.classList.add("tab-button--active");
+        } else {
+          btn.classList.remove("tab-button--active");
+        }
+      });
+    }
+
+    function loadTab(url, activeBtn) {
+      fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then((response) => response.text())
+        .then((html) => {
+          tabContent.innerHTML = html;
+          setActiveButton(activeBtn);
+        });
+    }
+
+    // Button clicks
+    btnOverall.addEventListener("click", function () {
+      loadTab("{% url 'analysis_dashboard_overall' analysis.id %}", btnOverall);
+    });
+
+    btnDevs.addEventListener("click", function () {
+      loadTab("{% url 'analysis_dashboard_developers' analysis.id %}", btnDevs);
+    });
+
+    // Load default child on first load
+    loadTab("{% url 'analysis_dashboard_overall' analysis.id %}", btnOverall);
+  });
+</script>
+{% endblock %}

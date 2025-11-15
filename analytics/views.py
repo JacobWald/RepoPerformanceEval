@@ -1,7 +1,7 @@
 # analytics/views.py
 import os, sys, uuid, threading, queue, subprocess, shlex, json
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from urllib.parse import urlparse
 
@@ -224,7 +224,7 @@ def _run_miner_and_upload(job_id: str, repo: Repository, sb_user_uuid: uuid.UUID
         return
 
     # Create an Analysis row for this run
-    Analysis.objects.create(
+    analysis = Analysis.objects.create(
         user_id=sb_user_uuid,
         repository=repo,
         mined_at=timezone.now(),
@@ -232,6 +232,9 @@ def _run_miner_and_upload(job_id: str, repo: Repository, sb_user_uuid: uuid.UUID
         # Optionally: parse candidate1 to compute quick summary stats:
         # summary={"ci": {"success": X, "failure": Y, ...}, "total_commits": N}
     )
+    
+    # store analysis id for redirecting to dashboard
+    JOBS[job_id]["analysis_id"] = str(analysis.id)    
 
     JOBS[job_id]["done"] = True
     _enqueue(job_id, "DONE")
@@ -291,9 +294,14 @@ def stream_progress(request, job_id: str):
                 yield f"data: {line}\n\n"
             except queue.Empty:
                 if JOBS[job_id]["done"]:
+                    analysis_id = JOBS[job_id].get("analysis_id")
+                    if analysis_id is not None:
+                        analysis_id = str(analysis_id)
+
                     payload = {
                         "ok": JOBS[job_id]["ok"],
                         "public_url": JOBS[job_id]["public_url"],
+                        "analysis_id": analysis_id,
                     }
                     yield "event: finished\n"
                     yield f"data: {json.dumps(payload)}\n\n"
@@ -302,6 +310,7 @@ def stream_progress(request, job_id: str):
     resp = StreamingHttpResponse(gen(), content_type="text/event-stream; charset=utf-8")
     resp["Cache-Control"] = "no-cache"
     return resp
+
 
 @require_supabase_login
 def progress_page(request, job_id: str):
@@ -320,3 +329,72 @@ def my_analyses(request):
         .order_by("-mined_at")
     )
     return render(request, "analytics/my_analyses.html", {"analyses": rows})
+
+@require_supabase_login
+def analysis_dashboard(request, analysis_id: int):
+    """
+    Parent page:
+    - shows repo details
+    - has two buttons
+    - loads child HTML into a container
+    """
+    sb_user = request.session.get("sb_user") or {}
+    sb_user_uuid = _uuid_from_session(sb_user)
+
+    analysis = get_object_or_404(
+        Analysis.objects.select_related("repository"),
+        pk=analysis_id,
+        user_id=sb_user_uuid,
+    )
+    repo = analysis.repository
+
+    context = {
+        "analysis": analysis,
+        "repo": repo,
+    }
+    return render(request, "analytics/dashboard.html", context)
+
+
+@require_supabase_login
+def analysis_dashboard_overall(request, analysis_id: int):
+    """
+    Child: overall data panel.
+    """
+    sb_user = request.session.get("sb_user") or {}
+    sb_user_uuid = _uuid_from_session(sb_user)
+
+    analysis = get_object_or_404(
+        Analysis.objects.select_related("repository"),
+        pk=analysis_id,
+        user_id=sb_user_uuid,
+    )
+    repo = analysis.repository
+
+    context = {
+        "analysis": analysis,
+        "repo": repo,
+    }
+    return render(request, "analytics/dashboard_overall.html", context)
+
+
+@require_supabase_login
+def analysis_dashboard_developers(request, analysis_id: int):
+    """
+    Child: developer-specific panel.
+    """
+    sb_user = request.session.get("sb_user") or {}
+    sb_user_uuid = _uuid_from_session(sb_user)
+
+    analysis = get_object_or_404(
+        Analysis.objects.select_related("repository"),
+        pk=analysis_id,
+        user_id=sb_user_uuid,
+    )
+    repo = analysis.repository
+
+    context = {
+        "analysis": analysis,
+        "repo": repo,
+    }
+    return render(request, "analytics/dashboard_developers.html", context)
+

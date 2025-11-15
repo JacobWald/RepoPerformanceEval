@@ -4,24 +4,50 @@
 <h2>Analyzing…</h2>
 <pre id="log" style="background:#111;color:#0f0;padding:1rem;max-height:300px;overflow:auto;"></pre>
 <script>
-const logEl = document.getElementById('log');
-const es = new EventSource("{% url 'progress_stream' job_id=job_id %}");
-es.onmessage = (e) => {
-  logEl.textContent += e.data + "\n";
-  logEl.scrollTop = logEl.scrollHeight;
-};
-es.addEventListener("finished", (e) => {
-  try {
-    const payload = JSON.parse(e.data);
-    if (payload.ok && payload.public_url) {
-      logEl.textContent += "\nUploaded: " + payload.public_url + "\n";
-    } else {
-      logEl.textContent += "\nJob finished with errors.\n";
+  const logEl = document.getElementById('log');
+  const es = new EventSource("{% url 'progress_stream' job_id=job_id %}");
+
+  // Use a dummy UUID that matches the <uuid:analysis_id> pattern
+  const DASHBOARD_UUID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
+  const DASHBOARD_URL_TEMPLATE = "{% url 'analysis_dashboard' '00000000-0000-0000-0000-000000000000' %}";
+
+  es.onmessage = (e) => {
+    if (!e.data) return;
+    logEl.textContent += e.data + "\n";
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  es.addEventListener("finished", (e) => {
+    try {
+      const payload = JSON.parse(e.data || "{}");
+      console.log("finished payload:", payload);
+
+      if (payload.ok) {
+        if (payload.public_url) {
+          logEl.textContent += "\nUploaded: " + payload.public_url + "\n";
+        }
+
+        if (payload.analysis_id) {
+          // Replace the dummy UUID in the template with the real one
+          const dashUrl = DASHBOARD_URL_TEMPLATE.replace(
+            DASHBOARD_UUID_PLACEHOLDER,
+            payload.analysis_id
+          );
+          window.location.href = dashUrl;
+        } else {
+          logEl.textContent += "\nJob finished but no analysis_id.\n";
+        }
+      } else {
+        logEl.textContent += "\nJob finished with errors.\n";
+      }
+    } catch (err) {
+      logEl.textContent += "\nCould not parse job result.\n";
+      console.error(err);
     }
-  } catch (_) {}
-  es.close();
-  // optional redirect:
-  // setTimeout(() => { window.location = "{% url 'my_analyses' %}" }, 1200);
-});
+
+    es.close();
+  });
 </script>
+
+
 {% endblock %}
