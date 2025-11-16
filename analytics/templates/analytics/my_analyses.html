@@ -1,27 +1,32 @@
 {% extends "analytics/base.html" %}
+{% load static %}
+
 {% block title %}My Analyses{% endblock %}
+
 {% block content %}
+<link rel="stylesheet" href="{% static 'styles/my_analyses.css' %}">
 <h1>My Analyses</h1>
+
 {% if analyses %}
-  <table>
-    <thead>
-      <tr>
-        <th>Repo</th>
-        <th>Mined At</th>
-        <th>JSON</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in analyses %}
-      <tr>
-        <td>{{ a.repository.name }}</td>
-        <td>{{ a.mined_at }}</td>
-        <td><a href="{{ a.json_url }}" target="_blank" rel="noopener">Open</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="analysis-list">
+    {% for a in analyses %}
+      <a class="analysis-card" href="{% url 'analysis_dashboard' a.id %}">
+        <div class="analysis-card-left">
+          <div class="analysis-repo-name">{{ a.repository.name }}</div>
+          <div class="analysis-meta">
+            <span class="analysis-mined-label">Mined:</span>
+            <span class="analysis-mined-at">{{ a.mined_at }}</span>
+          </div>
+        </div>
+
+        <div class="analysis-card-right">
+            <span class="analysis-json-pill">View Analysis</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
 {% else %}
   <p>No analyses yet. Run one from <a href="{% url 'home' %}">Home</a>.</p>
 {% endif %}
+
 {% endblock %}
