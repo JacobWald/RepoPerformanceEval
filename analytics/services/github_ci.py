@@ -88,10 +88,8 @@ def fetch_workflow_runs_covering(
     hard_page_cap: int = 100,
     on_page=None,
     event: Optional[str] = None,
-    branch: Optional[str] = None,  
+    branch: Optional[str] = None,
 ):
-    # ... cutoff setup ...
-
     all_runs = []
     covered = set()
     page = 1
@@ -99,26 +97,30 @@ def fetch_workflow_runs_covering(
 
     while page <= hard_page_cap:
         params = {"per_page": 100, "page": page}
-        if event:  params["event"] = event     # e.g., "push"
-        if branch: params["branch"] = branch   # e.g., "main"
+        if event:
+            params["event"] = event
+        if branch:
+            params["branch"] = branch
 
         r = _get(f"{GITHUB_API}/repos/{owner}/{repo}/actions/runs", params=params)
         data = r.json()
 
-        runs = data.get("workflow_runs", [])
-        if not runs:
+        raw_runs = data.get("workflow_runs", [])
+        if not raw_runs:
             if on_page:
                 on_page(page, 0, len(all_runs), len(covered))
             break
 
-        all_runs.extend(runs)
-
+        filtered_runs = []
         oldest = None
-        for run in runs:
+
+        for run in raw_runs:
             # Skip fork PR runs unless they’re for this repo
             head_repo = (run.get("head_repository") or {}).get("full_name")
             if head_repo and head_repo != repo_full:
                 continue
+
+            filtered_runs.append(run)
 
             sha = run.get("head_sha")
             if sha in target_shas:
@@ -130,8 +132,11 @@ def fetch_workflow_runs_covering(
                 if oldest is None or dt < oldest:
                     oldest = dt
 
+        # Only extend with filtered (non-fork) runs
+        all_runs.extend(filtered_runs)
+
         if on_page:
-            on_page(page, len(runs), len(all_runs), len(covered))
+            on_page(page, len(filtered_runs), len(all_runs), len(covered))
 
         if covered.issuperset(target_shas):
             print(f"  ✓ Covered all target SHAs using {page} page(s).")
@@ -143,6 +148,7 @@ def fetch_workflow_runs_covering(
         page += 1
 
     return all_runs, covered
+
 
 
 def summarize_runs_by_sha(workflow_runs):
