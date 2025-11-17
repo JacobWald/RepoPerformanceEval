@@ -20,13 +20,13 @@
   .dashboard-subtitle {
     margin: 0.25rem 0 0;
     font-size: 1rem;
-    color: var(--color-primary-alt);
+    color: var(--color-primary);
   }
   
   /* Repo summary card */
   .repo-summary-card {
     border-radius: 12px;
-    background: var(--color-secondary);
+    background: var(--color-primary);
     padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
   }
@@ -38,22 +38,15 @@
     gap: 1rem;
   } */
   
-  .repo-label {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-primary-alt);
-  }
-  
   .repo-name {
     font-size: 1.2rem;
     font-weight: 600;
-    color: var(--color-primary);
+    color: var(--color-secondary);
   }
   
   .repo-url {
     font-size: 0.9rem;
-    color: var(--color-primary);
+    color: var(--color-secondary);
     word-break: break-all;
   }
   
@@ -78,9 +71,10 @@
     border-radius: 2rem;
     border: 1px solid var(--color-primary-alt);
     background: #fff;
-    color: var(--color-primary);
+    color: var(--color-secondary-alt);
     font-size: 0.9rem;
     cursor: pointer;
+    background-color: var(--color-primary-alt);
   }
   
   .tab-button:hover {

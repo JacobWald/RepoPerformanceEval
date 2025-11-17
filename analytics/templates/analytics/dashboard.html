@@ -40,6 +40,105 @@
 </div>
 
 <script>
+  function initActivityBar() {
+    const container = document.getElementById('activity-bar');
+    if (!container) {
+      // Not on the overall tab
+      return;
+    }
+
+    const jsonUrl = container.dataset.jsonUrl;
+    console.log('jsonUrl from data attribute:', jsonUrl);
+    if (!jsonUrl) return;
+
+    fetch(jsonUrl)
+      .then((res) => {
+        console.log('fetch status:', res.status);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then((data) => {
+        console.log('analytics JSON loaded:', data);
+
+        const summary = data.repo_summary || {};
+        const mining = data.mining_params || {};
+
+        const daysWindow = mining.days_window || null;
+        if (daysWindow) {
+          const span = document.getElementById('activity-days-window');
+          if (span) span.textContent = daysWindow;
+        }
+
+        const totalCommits     = summary.total_commits || 0;
+        const totalInsertions  = summary.total_insertions || 0;
+        const totalDeletions   = summary.total_deletions || 0;
+        const totalCiRuns      = summary.total_ci_runs || 0;
+
+        const ciTotals         = summary.ci_status_totals || {};
+        const failed           = ciTotals.failure || 0;
+        const success          = ciTotals.success || 0;
+
+        const ciCoveredCommits = summary.ci_covered_commits || 0;
+        const ciCoverageRatio  = summary.ci_coverage_ratio || (
+          totalCommits ? ciCoveredCommits / totalCommits : 0
+        );
+
+        const failurePct   = totalCiRuns ? (failed / totalCiRuns) * 100 : 0;
+        const prDenom      = success + failed;
+        const prSuccessPct = prDenom ? (success / prDenom) * 100 : 0;
+        const ciCoveragePct = ciCoverageRatio * 100;
+
+        // Optional: tooltips for quick hover info
+        const commitsSeg = container.querySelector('.activity-bar-segment.commits');
+        const linesSeg   = container.querySelector('.activity-bar-segment.lines');
+        const ciSeg      = container.querySelector('.activity-bar-segment.ci');
+
+        if (commitsSeg) {
+          commitsSeg.title = `${totalCommits.toLocaleString()} commits`;
+        }
+        const totalLinesChanged = totalInsertions + totalDeletions;
+        if (linesSeg) {
+          linesSeg.title = `${totalLinesChanged.toLocaleString()} total lines changed`;
+        }
+        if (ciSeg) {
+          ciSeg.title = `${totalCiRuns.toLocaleString()} CI runs (${failurePct.toFixed(1)}% failed)`;
+        }
+
+        // Fill legend text
+        const setText = (selector, text) => {
+          const el = container.querySelector(selector);
+          if (el) el.textContent = text;
+        };
+
+        setText('[data-stat="commits"]',
+          `${totalCommits.toLocaleString()} commits`);
+
+        setText('[data-stat="commits-ci"]',
+          `${ciCoveredCommits.toLocaleString()} commits with CI (${ciCoveragePct.toFixed(1)}% of commits)`);
+
+        setText('[data-stat="lines-added"]',
+          `${totalInsertions.toLocaleString()} lines added`);
+
+        setText('[data-stat="lines-deleted"]',
+          `${totalDeletions.toLocaleString()} lines deleted`);
+
+        setText('[data-stat="ci-runs"]',
+          `${totalCiRuns.toLocaleString()} CI runs`);
+
+        setText('[data-stat="ci-failure"]',
+          totalCiRuns ? `${failurePct.toFixed(1)}% failed` : 'n/a');
+
+        setText('[data-stat="pr-success"]',
+          prDenom ? `${prSuccessPct.toFixed(1)}% success` : 'n/a');
+      })
+      .catch((err) => {
+        console.error('Failed to load analytics JSON', err);
+        container.classList.add('activity-bar--error');
+        const inner = container.querySelector('.activity-bar-inner');
+        if (inner) inner.textContent = 'Unable to load project analytics.';
+      });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     const btnOverall = document.getElementById("btn-overall");
     const btnDevs = document.getElementById("btn-devs");
@@ -61,10 +160,10 @@
         .then((html) => {
           tabContent.innerHTML = html;
           setActiveButton(activeBtn);
+          initActivityBar();
         });
     }
 
-    // Button clicks
     btnOverall.addEventListener("click", function () {
       loadTab("{% url 'analysis_dashboard_overall' analysis.id %}", btnOverall);
     });
@@ -73,8 +172,8 @@
       loadTab("{% url 'analysis_dashboard_developers' analysis.id %}", btnDevs);
     });
 
-    // Load default child on first load
     loadTab("{% url 'analysis_dashboard_overall' analysis.id %}", btnOverall);
   });
 </script>
+
 {% endblock %}

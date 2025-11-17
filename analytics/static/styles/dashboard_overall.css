@@ -1,0 +1,73 @@
+@import url('variables.css');
+
+.activity-card {
+  background: var(--color-primary);        
+  border-radius: 16px;
+  padding: 1.25rem 1.75rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--color-secondary);
+}
+
+.activity-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--color-secondary);
+}
+
+/* Legend: icon tiles laid out in a bar */
+.activity-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.9rem;
+  justify-content: space-between;
+}
+
+.legend-tile {
+  background: var(--color-secondary);           /* slightly darker than card */
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1 1 120px;
+  max-width: 150px;
+}
+
+.legend-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-alt);    /* light bubble */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.35rem;
+}
+
+.legend-icon-img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.legend-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.legend-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}

@@ -1,7 +1,95 @@
-<h2 class="tab-title">Overall Analysis Results</h2>
+{% load static %}
+<link rel="stylesheet" href="{% static 'styles/dashboard_overall.css' %}">
 
-<p class="tab-description">
- Analytics for <strong>{{ repo.name }}</strong>.
-</p>
+<h2 class="tab-title">Analytics for <strong>{{ repo.name }}</strong></h2>
 
-<!--Charts should be added from here-->
+<section class="activity-card">
+  <h2 class="activity-card-title">
+    Project Activity (Last <span id="activity-days-window">—</span> Days)
+  </h2>
+
+  <div id="activity-bar"
+       class="activity-bar"
+       data-json-url="{{ analysis.json_url }}">
+
+    <div class="activity-bar-legend">
+      <!-- Commits -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <!-- TODO: replace src with your real icon file -->
+          <img src="{% static 'icons/commits.svg' %}" alt="Commits icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">Commits</div>
+          <div class="legend-value" data-stat="commits">–</div>
+        </div>
+      </div>
+
+      <!-- Commits with CI -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <img src="{% static 'icons/commits_ci.svg' %}" alt="Commits with CI icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">Commits with CI</div>
+          <div class="legend-value" data-stat="commits-ci">–</div>
+        </div>
+      </div>
+
+      <!-- Lines added -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <img src="{% static 'icons/lines_added.svg' %}" alt="Lines added icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">Lines added</div>
+          <div class="legend-value" data-stat="lines-added">–</div>
+        </div>
+      </div>
+
+      <!-- Lines deleted -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <img src="{% static 'icons/lines_deleted.svg' %}" alt="Lines deleted icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">Lines deleted</div>
+          <div class="legend-value" data-stat="lines-deleted">–</div>
+        </div>
+      </div>
+
+      <!-- CI runs -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <img src="{% static 'icons/ci_runs.svg' %}" alt="CI runs icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">CI runs</div>
+          <div class="legend-value" data-stat="ci-runs">–</div>
+        </div>
+      </div>
+
+      <!-- Failed builds -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <img src="{% static 'icons/failed_builds.svg' %}" alt="Failed builds icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">Failed builds</div>
+          <div class="legend-value" data-stat="ci-failure">–</div>
+        </div>
+      </div>
+
+      <!-- PR success rate -->
+      <div class="legend-tile">
+        <div class="legend-icon">
+          <img src="{% static 'icons/pr_success.svg' %}" alt="PR success icon" class="legend-icon-img">
+        </div>
+        <div class="legend-text">
+          <div class="legend-label">PR success rate</div>
+          <div class="legend-value" data-stat="pr-success">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
