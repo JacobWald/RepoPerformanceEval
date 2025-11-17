@@ -1,0 +1,215 @@
+@import url('variables.css');
+
+.activity-card {
+    background: var(--color-primary);        
+    border-radius: 16px;
+    padding: 1.25rem 1.75rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    color: var(--color-secondary);
+  }
+
+/* ============================
+   Developer panel container
+   ============================ */
+
+.developer-panel {
+  margin-top: 0.75rem;
+}
+
+/* ============================
+   Searchable dropdown
+   ============================ */
+
+/* Left-aligned block under the heading */
+.dev-dropdown-wrapper {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.dev-dropdown {
+  position: relative;
+  max-width: 340px;
+  width: 100%;
+}
+
+/* Button looks like active tab color pill */
+.dev-dropdown-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+
+  background: var(--color-primary);      /* main brand (same as active tab) */
+  color: var(--color-secondary);         /* light text */
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.dev-dropdown-arrow {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Dropdown menu panel */
+.dev-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  border-radius: 14px;
+  background: var(--color-secondary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+  display: none; /* toggled via JS */
+}
+
+/* Search box inside menu */
+.dev-dropdown-search {
+  display: block;
+  width: 80%;
+  margin: 0.6rem 0.75rem 0.45rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  outline: none;
+  font-size: 0.85rem;
+  background: var(--color-secondary-alt);
+  color: var(--color-primary);
+}
+
+/* List of developers */
+.dev-dropdown-list {
+  list-style: none !important;
+  margin: 0;
+  padding: 0.25rem 0;
+  max-height: 220px;       /* scrollbar after this height */
+  overflow-y: auto;
+}
+
+/* Scrollbar styling (WebKit) */
+.dev-dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+.dev-dropdown-list::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+}
+.dev-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.25);
+  border-radius: 3px;
+}
+
+/* Items inside dropdown */
+.dev-dropdown-item {
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  cursor: pointer;
+  color: var(--color-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.dev-dropdown-item + .dev-dropdown-item {
+  border-top: 1px solid rgba(0,0,0,0.04);
+}
+
+.dev-dropdown-item:hover {
+  background: var(--color-primary-alt);
+  color: var(--color-secondary);
+}
+
+/* Slight highlight when open */
+.dev-dropdown.dev-dropdown--open .dev-dropdown-toggle {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+
+/* ============================
+   Developer stats tiles + icons
+   ============================ */
+
+.dev-stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  justify-content: space-between;
+}
+
+.dev-stat-tile {
+  background: var(--color-secondary);    /* same light tile as overall */
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 160px;
+  max-width: 220px;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+}
+
+/* Icon bubble on the left */
+.dev-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-alt);  /* circular bubble */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dev-stat-icon-img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+/* Text block inside tile */
+.dev-stat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.dev-stat-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.dev-stat-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.dev-stat-subvalue {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-primary-alt);
+}
+
+/* ============================
+   Responsive tweaks
+   ============================ */
+
+@media (max-width: 900px) {
+  .dev-stats-grid {
+    justify-content: center;
+  }
+
+  .dev-stat-tile {
+    max-width: unset;
+  }
+}

@@ -1,7 +1,111 @@
-<h2 class="tab-title">Developer-specific data</h2>
+{% load static %}
+<link rel="stylesheet" href="{% static 'styles/dashboard_dev.css' %}" />
 
-<p class="tab-description">
-  Developer-specific analytics for <strong>{{ repo.name }}</strong>.
-</p>
+<section>
+  <div
+    id="developer-panel"
+    class="developer-panel"
+    data-json-url="{{ analysis.json_url }}"
+  >
+    <div class="dev-dropdown-wrapper">
+      <div class="dev-dropdown" id="dev-dropdown">
+        <button
+          type="button"
+          class="dev-dropdown-toggle"
+          id="dev-dropdown-toggle"
+        >
+          <span id="dev-dropdown-label">Select developer</span>
+          <span class="dev-dropdown-arrow">▾</span>
+        </button>
 
-<!--Charts should be added from here-->
+        <div class="dev-dropdown-menu" id="dev-dropdown-menu">
+          <input
+            type="text"
+            id="dev-dropdown-search"
+            class="dev-dropdown-search"
+            placeholder="Search by name or email..."
+          />
+          <ul class="dev-dropdown-list" id="dev-dropdown-list">
+            <!-- <li> items inserted by JS -->
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="dev-insights-heading">
+      <h2 class="activity-card-title" id="dev-insights-title">
+        Developer Insights
+      </h2>
+      <p class="dev-insights-subtitle" id="dev-insights-subtitle">
+        Select a developer from the dropdown to see per-developer statistics.
+      </p>
+    </div>
+    <div class="activity-card">
+      <!-- Stats grid (cards) on the same purple background -->
+      <div class="dev-stats-grid">
+        <!-- Commits & lines -->
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <img
+              src="{% static 'icons/commits.svg' %}"
+              alt="Commits icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">Commits &amp; Lines</div>
+            <div class="dev-stat-value" data-dev-stat="commits">–</div>
+            <div class="dev-stat-subvalue" data-dev-stat="lines">–</div>
+          </div>
+        </div>
+
+        <!-- Average streak -->
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <img
+              src="{% static 'icons/lines_added.svg' %}"
+              alt="Streak icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">Average streak</div>
+            <div class="dev-stat-value" data-dev-stat="streak">–</div>
+            <div class="dev-stat-subvalue">days</div>
+          </div>
+        </div>
+
+        <!-- Most active time -->
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <img
+              src="{% static 'icons/lines_added.svg' %}"
+              alt="Active time icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">Most active time</div>
+            <div class="dev-stat-value" data-dev-stat="active-day">–</div>
+            <div class="dev-stat-subvalue" data-dev-stat="active-hour">–</div>
+          </div>
+        </div>
+
+        <!-- CI failures -->
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <img
+              src="{% static 'icons/failed_builds.svg' %}"
+              alt="CI failures icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">CI failures</div>
+            <div class="dev-stat-value" data-dev-stat="ci-failure-ratio">–</div>
+            <div class="dev-stat-subvalue" data-dev-stat="ci-runs">–</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

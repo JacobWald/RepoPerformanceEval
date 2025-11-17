@@ -1,9 +1,5 @@
-{% extends "analytics/base.html" %}
-{% load static %}
-
-
-{% block content %}
-<link rel="stylesheet" href="{% static 'styles/dashboard.css' %}">
+{% extends "analytics/base.html" %} {% load static %} {% block content %}
+<link rel="stylesheet" href="{% static 'styles/dashboard.css' %}" />
 
 <div class="dashboard-container">
   <!-- Header -->
@@ -24,7 +20,11 @@
 
   <!-- Buttons -->
   <div class="dashboard-tabs">
-    <button id="btn-overall" type="button" class="tab-button tab-button--active">
+    <button
+      id="btn-overall"
+      type="button"
+      class="tab-button tab-button--active"
+    >
       Overall Analysis Result
     </button>
 
@@ -41,57 +41,58 @@
 
 <script>
   function initActivityBar() {
-    const container = document.getElementById('activity-bar');
+    const container = document.getElementById("activity-bar");
     if (!container) {
       // Not on the overall tab
       return;
     }
 
     const jsonUrl = container.dataset.jsonUrl;
-    console.log('jsonUrl from data attribute:', jsonUrl);
+    console.log("jsonUrl from data attribute:", jsonUrl);
     if (!jsonUrl) return;
 
     fetch(jsonUrl)
       .then((res) => {
-        console.log('fetch status:', res.status);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        console.log("fetch status:", res.status);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       })
       .then((data) => {
-        console.log('analytics JSON loaded:', data);
+        console.log("analytics JSON loaded (overall):", data);
 
         const summary = data.repo_summary || {};
         const mining = data.mining_params || {};
 
         const daysWindow = mining.days_window || null;
         if (daysWindow) {
-          const span = document.getElementById('activity-days-window');
+          const span = document.getElementById("activity-days-window");
           if (span) span.textContent = daysWindow;
         }
 
-        const totalCommits     = summary.total_commits || 0;
-        const totalInsertions  = summary.total_insertions || 0;
-        const totalDeletions   = summary.total_deletions || 0;
-        const totalCiRuns      = summary.total_ci_runs || 0;
+        const totalCommits = summary.total_commits || 0;
+        const totalInsertions = summary.total_insertions || 0;
+        const totalDeletions = summary.total_deletions || 0;
+        const totalCiRuns = summary.total_ci_runs || 0;
 
-        const ciTotals         = summary.ci_status_totals || {};
-        const failed           = ciTotals.failure || 0;
-        const success          = ciTotals.success || 0;
+        const ciTotals = summary.ci_status_totals || {};
+        const failed = ciTotals.failure || 0;
+        const success = ciTotals.success || 0;
 
         const ciCoveredCommits = summary.ci_covered_commits || 0;
-        const ciCoverageRatio  = summary.ci_coverage_ratio || (
-          totalCommits ? ciCoveredCommits / totalCommits : 0
-        );
+        const ciCoverageRatio =
+          summary.ci_coverage_ratio ||
+          (totalCommits ? ciCoveredCommits / totalCommits : 0);
 
-        const failurePct   = totalCiRuns ? (failed / totalCiRuns) * 100 : 0;
-        const prDenom      = success + failed;
+        const failurePct = totalCiRuns ? (failed / totalCiRuns) * 100 : 0;
+        const prDenom = success + failed;
         const prSuccessPct = prDenom ? (success / prDenom) * 100 : 0;
         const ciCoveragePct = ciCoverageRatio * 100;
 
-        // Optional: tooltips for quick hover info
-        const commitsSeg = container.querySelector('.activity-bar-segment.commits');
-        const linesSeg   = container.querySelector('.activity-bar-segment.lines');
-        const ciSeg      = container.querySelector('.activity-bar-segment.ci');
+        const commitsSeg = container.querySelector(
+          ".activity-bar-segment.commits"
+        );
+        const linesSeg = container.querySelector(".activity-bar-segment.lines");
+        const ciSeg = container.querySelector(".activity-bar-segment.ci");
 
         if (commitsSeg) {
           commitsSeg.title = `${totalCommits.toLocaleString()} commits`;
@@ -101,41 +102,315 @@
           linesSeg.title = `${totalLinesChanged.toLocaleString()} total lines changed`;
         }
         if (ciSeg) {
-          ciSeg.title = `${totalCiRuns.toLocaleString()} CI runs (${failurePct.toFixed(1)}% failed)`;
+          ciSeg.title = `${totalCiRuns.toLocaleString()} CI runs (${failurePct.toFixed(
+            1
+          )}% failed)`;
         }
 
-        // Fill legend text
         const setText = (selector, text) => {
           const el = container.querySelector(selector);
           if (el) el.textContent = text;
         };
 
-        setText('[data-stat="commits"]',
-          `${totalCommits.toLocaleString()} commits`);
+        setText(
+          '[data-stat="commits"]',
+          `${totalCommits.toLocaleString()} commits`
+        );
 
-        setText('[data-stat="commits-ci"]',
-          `${ciCoveredCommits.toLocaleString()} commits with CI (${ciCoveragePct.toFixed(1)}% of commits)`);
+        setText(
+          '[data-stat="commits-ci"]',
+          `${ciCoveredCommits.toLocaleString()} commits with CI (${ciCoveragePct.toFixed(
+            1
+          )}% of commits)`
+        );
 
-        setText('[data-stat="lines-added"]',
-          `${totalInsertions.toLocaleString()} lines added`);
+        setText(
+          '[data-stat="lines-added"]',
+          `${totalInsertions.toLocaleString()} lines added`
+        );
 
-        setText('[data-stat="lines-deleted"]',
-          `${totalDeletions.toLocaleString()} lines deleted`);
+        setText(
+          '[data-stat="lines-deleted"]',
+          `${totalDeletions.toLocaleString()} lines deleted`
+        );
 
-        setText('[data-stat="ci-runs"]',
-          `${totalCiRuns.toLocaleString()} CI runs`);
+        setText(
+          '[data-stat="ci-runs"]',
+          `${totalCiRuns.toLocaleString()} CI runs`
+        );
 
-        setText('[data-stat="ci-failure"]',
-          totalCiRuns ? `${failurePct.toFixed(1)}% failed` : 'n/a');
+        setText(
+          '[data-stat="ci-failure"]',
+          totalCiRuns ? `${failurePct.toFixed(1)}% failed` : "n/a"
+        );
 
-        setText('[data-stat="pr-success"]',
-          prDenom ? `${prSuccessPct.toFixed(1)}% success` : 'n/a');
+        setText(
+          '[data-stat="pr-success"]',
+          prDenom ? `${prSuccessPct.toFixed(1)}% success` : "n/a"
+        );
       })
       .catch((err) => {
-        console.error('Failed to load analytics JSON', err);
-        container.classList.add('activity-bar--error');
-        const inner = container.querySelector('.activity-bar-inner');
-        if (inner) inner.textContent = 'Unable to load project analytics.';
+        console.error("Failed to load analytics JSON (overall)", err);
+        if (!container) return;
+        container.classList.add("activity-bar--error");
+        const inner = container.querySelector(".activity-bar-inner");
+        if (inner) inner.textContent = "Unable to load project analytics.";
+      });
+  }
+
+  // NEW: Developer-specific init
+  function initDeveloperPanel() {
+    const panel = document.getElementById("developer-panel");
+    if (!panel) {
+      // Not on devs tab
+      return;
+    }
+
+    const jsonUrl = panel.dataset.jsonUrl;
+    console.log("dev panel jsonUrl:", jsonUrl);
+    if (!jsonUrl) return;
+
+    fetch(jsonUrl)
+      .then((res) => {
+        console.log("fetch status (devs):", res.status);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then((data) => {
+        console.log("analytics JSON loaded (devs):", data);
+        const authors = data.authors || [];
+
+        const dropdown = panel.querySelector("#dev-dropdown");
+        const toggleBtn = panel.querySelector("#dev-dropdown-toggle");
+        const labelSpan = panel.querySelector("#dev-dropdown-label");
+        const menu = panel.querySelector("#dev-dropdown-menu");
+        const searchInput = panel.querySelector("#dev-dropdown-search");
+        const listEl = panel.querySelector("#dev-dropdown-list");
+
+        const titleEl = panel.querySelector("#dev-insights-title");
+        const subtitleEl = panel.querySelector("#dev-insights-subtitle");
+
+        if (!dropdown || !toggleBtn || !menu || !searchInput || !listEl) {
+          console.warn("Developer dropdown elements not found");
+          return;
+        }
+
+        function setStat(key, text) {
+          const el = panel.querySelector(`[data-dev-stat="${key}"]`);
+          if (el) el.textContent = text;
+        }
+
+        function setHeading(dev) {
+          if (!titleEl || !subtitleEl) return;
+
+          if (!dev) {
+            titleEl.textContent = "Developer Insights";
+            subtitleEl.textContent =
+              "Select a developer from the dropdown to see per-developer statistics.";
+            return;
+          }
+
+          const name = dev.name || "Unknown developer";
+          const email = dev.email || "";
+
+          titleEl.textContent = `Insights for ${name}`;
+          subtitleEl.textContent = email || "";
+        }
+
+        function renderDeveloper(dev) {
+          if (!dev) {
+            setStat("commits", "–");
+            setStat("lines", "–");
+            setStat("streak", "–");
+            setStat("active-day", "–");
+            setStat("active-hour", "–");
+            setStat("ci-failure-ratio", "–");
+            setStat("ci-runs", "–");
+            setHeading(null);
+            return;
+          }
+
+          const name = dev.name || "Unknown";
+          const email = dev.email || "–";
+          const commits =
+            dev.commit_count ||
+            (Array.isArray(dev.commits) ? dev.commits.length : 0) ||
+            0;
+          const insertions = dev.total_insertions || 0;
+          const deletions = dev.total_deletions || 0;
+          const avgStreak =
+            typeof dev.average_streak_days === "number"
+              ? dev.average_streak_days.toFixed(2)
+              : "n/a";
+
+          // Most active weekday
+          const weekdayFreq = dev.weekday_frequency || {};
+          let bestDay = "n/a";
+          let bestDayCount = 0;
+          Object.entries(weekdayFreq).forEach(([day, count]) => {
+            if (count > bestDayCount) {
+              bestDay = day;
+              bestDayCount = count;
+            }
+          });
+
+          // Most active hour from dev.commits[].author_hour
+          let bestHourLabel = "n/a";
+          if (Array.isArray(dev.commits) && dev.commits.length > 0) {
+            const hourCounts = new Array(24).fill(0);
+            dev.commits.forEach((c) => {
+              const h = c.author_hour;
+              if (typeof h === "number" && h >= 0 && h < 24) {
+                hourCounts[h] += 1;
+              }
+            });
+
+            let bestHour = 0;
+            let bestHourCount = 0;
+            hourCounts.forEach((count, hour) => {
+              if (count > bestHourCount) {
+                bestHour = hour;
+                bestHourCount = count;
+              }
+            });
+
+            if (bestHourCount > 0) {
+              bestHourLabel = `${bestHour}:00 hour`;
+            }
+          }
+
+          // CI failures / total CI runs for this dev
+          const ciTotals = dev.ci_conclusions_totals || {};
+          const ciFailures = ciTotals.failure || 0;
+          const totalCiRuns = Object.values(ciTotals).reduce(
+            (sum, v) => sum + (v || 0),
+            0
+          );
+          const failurePct = totalCiRuns
+            ? ((ciFailures / totalCiRuns) * 100).toFixed(1)
+            : null;
+
+          setStat("commits", `${commits.toLocaleString()} commits`);
+          setStat(
+            "lines",
+            `${insertions.toLocaleString()} + / ${deletions.toLocaleString()} -`
+          );
+          setStat("streak", avgStreak);
+          setStat(
+            "active-day",
+            bestDayCount ? `${bestDay} (${bestDayCount} commits)` : "n/a"
+          );
+          setStat("active-hour", bestHourLabel);
+          setStat(
+            "ci-runs",
+            totalCiRuns ? `${totalCiRuns} CI runs` : "no CI data"
+          );
+          setStat(
+            "ci-failure-ratio",
+            totalCiRuns
+              ? `${ciFailures}/${totalCiRuns} (${failurePct}% failed)`
+              : "n/a"
+          );
+
+          setHeading({ name, email });
+        }
+
+        // Populate the <ul> based on filter
+        function populateList(filterTerm = "") {
+          const term = filterTerm.trim().toLowerCase();
+          listEl.innerHTML = "";
+
+          const filtered = term
+            ? authors.filter((a) => {
+                const n = (a.name || "").toLowerCase();
+                const e = (a.email || "").toLowerCase();
+                return n.includes(term) || e.includes(term);
+              })
+            : authors;
+
+          filtered.forEach((a) => {
+            const li = document.createElement("li");
+            const valueKey = a.email || a.name || "";
+            li.dataset.key = valueKey;
+            li.className = "dev-dropdown-item";
+            li.textContent = a.email
+              ? `${a.name} (${a.email})`
+              : a.name || "Unknown";
+            listEl.appendChild(li);
+          });
+
+          if (filtered.length === 0) {
+            renderDeveloper(null);
+          }
+        }
+
+        // Toggle menu open/close
+        function openMenu() {
+          dropdown.classList.add("dev-dropdown--open");
+          menu.style.display = "block";
+          searchInput.value = "";
+          populateList("");
+          searchInput.focus();
+        }
+
+        function closeMenu() {
+          dropdown.classList.remove("dev-dropdown--open");
+          menu.style.display = "none";
+        }
+
+        toggleBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = dropdown.classList.contains("dev-dropdown--open");
+          if (isOpen) {
+            closeMenu();
+          } else {
+            openMenu();
+          }
+        });
+
+        // Click outside to close
+        document.addEventListener("click", (e) => {
+          if (!dropdown.contains(e.target)) {
+            closeMenu();
+          }
+        });
+
+        // Search input filters list
+        searchInput.addEventListener("input", (e) => {
+          populateList(e.target.value);
+        });
+
+        // Click on list item → select dev
+        listEl.addEventListener("click", (e) => {
+          const li = e.target.closest(".dev-dropdown-item");
+          if (!li) return;
+          const key = li.dataset.key;
+
+          const dev = authors.find((a) => (a.email || a.name || "") === key);
+          if (dev) {
+            labelSpan.textContent = dev.email
+              ? `${dev.name} (${dev.email})`
+              : dev.name || "Unknown";
+            renderDeveloper(dev);
+          }
+          closeMenu();
+        });
+
+        // Initial state
+        if (authors.length === 0) {
+          labelSpan.textContent = "No developers found";
+          renderDeveloper(null);
+        } else {
+          labelSpan.textContent = "Select developer";
+          renderDeveloper(null);
+        }
+
+        // Build initial list
+        populateList("");
+      })
+      .catch((err) => {
+        console.error("Failed to load analytics JSON (devs)", err);
+        panel.classList.add("activity-bar--error");
       });
   }
 
@@ -160,7 +435,9 @@
         .then((html) => {
           tabContent.innerHTML = html;
           setActiveButton(activeBtn);
+          // Re-init tab-specific JS after HTML is injected
           initActivityBar();
+          initDeveloperPanel();
         });
     }
 
@@ -172,6 +449,7 @@
       loadTab("{% url 'analysis_dashboard_developers' analysis.id %}", btnDevs);
     });
 
+    // Default tab on first load
     loadTab("{% url 'analysis_dashboard_overall' analysis.id %}", btnOverall);
   });
 </script>
