@@ -1,0 +1,73 @@
+@import url('../css/variables.css');
+/* Container for all cards */
+.analysis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Whole card is a clickable link */
+.analysis-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+
+  background: var(--color-primary);
+  border: 1px solid #ddd;
+
+  text-decoration: none;
+  color: var(--color-secondary);
+
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+/* Hover / focus state */
+.analysis-card:hover,
+.analysis-card:focus-visible {
+  background: var(--color-primary-alt);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Left side: repo name + meta */
+.analysis-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.analysis-repo-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.analysis-meta {
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+}
+
+.analysis-mined-label {
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+/* Right side: pill / status */
+.analysis-card-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Pill for JSON link */
+.analysis-json-pill {
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid currentColor;
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+}
