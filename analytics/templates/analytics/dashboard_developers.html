@@ -1,5 +1,6 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'styles/dashboard_dev.css' %}" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <section>
   <div
@@ -106,6 +107,18 @@
           </div>
         </div>
       </div>
+      <!--graph and expanldable table listing-->
+      <div class="ci-bar-chart-container">
+        <canvas id="ciBarChart"></canvas>
+      </div>
+    </div>
+    <div class="activity-card">
+        <!--graph and expanldable table listing-->
+        <div class="ci-bar-chart-container">
+          <canvas id="ciBarChart"></canvas>
+        </div>
+    </div>
+    </div>
     </div>
   </div>
 </section>

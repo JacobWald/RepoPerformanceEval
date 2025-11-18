@@ -1,5 +1,6 @@
 {% extends "analytics/base.html" %} {% load static %} {% block content %}
 <link rel="stylesheet" href="{% static 'styles/dashboard.css' %}" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="dashboard-container">
   <!-- Header -->
@@ -311,8 +312,48 @@
               ? `${ciFailures}/${totalCiRuns} (${failurePct}% failed)`
               : "n/a"
           );
+          function renderCiBarChart(ciTotals) {
+            const ctx = document.getElementById("ciBarChart");
+            const successCount = ciTotals.success || 0;
+            const failedCount  = ciTotals.failure || 0;
+            const skippedCount = ciTotals.skipped || 0;
+            if (!ctx) {
+              console.warn("ciBarChart canvas not found");
+              return;
+            }
+
+            new Chart(ctx, {
+              type: "bar",
+              data: {
+                labels: ["Success", "Failed", "Skipped"],
+                datasets: [
+                  {
+                    label: "CI Runs",
+                    data: [successCount, failedCount, skippedCount],
+                    backgroundColor: [
+                      "rgba(75, 192, 192, 0.7)",  // success
+                      "rgba(255, 99, 132, 0.7)",  // failed
+                      "rgba(255, 205, 86, 0.7)"   // skipped
+                    ],
+                    borderColor: [
+                      "rgba(75, 192, 192, 1)",
+                      "rgba(255, 99, 132, 1)",
+                      "rgba(255, 205, 86, 1)"
+                    ],
+                    borderWidth: 1
+                  }
+                ]
+              },
+              options: {
+                scales: {
+                  y: { beginAtZero: true }
+                }
+              }
+            });
+          }
 
           setHeading({ name, email });
+          renderCiBarChart(ciTotals);
         }
 
         // Populate the <ul> based on filter
