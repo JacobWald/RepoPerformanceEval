@@ -232,3 +232,26 @@
     .percentage-80 { height: 80%; }
     .percentage-60 { height: 60%; }
     .percentage-40 { height: 40%; }
+
+    .commit-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      color: var(--color-primary);
+      border: 1px solid #333;
+    }
+
+    .commit-table th, .commit-table td {
+      padding: 10px;
+      border-bottom: 1px solid #333;
+    }
+    .commit-table th {
+      background: var(--color-secondary-alt);
+      text-align: left;
+      font-weight: 600;
+    }
+    .commit-table a {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }

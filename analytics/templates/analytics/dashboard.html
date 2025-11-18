@@ -317,10 +317,6 @@
           function renderCiBarChart(ciTotals, totalCiRuns) {
             const ctx = document.getElementById("ciBarChart");
 
-            console.log("renderCiBarChart called with:", 
-              {ciTotals, totalCiRuns}
-            );
-
             if (!ctx) {
               console.warn("ciBarChart canvas not found");
               return;
@@ -377,10 +373,40 @@
               }
             });
           }
+          function renderCommitTable(dev) {
+            const tbody = document.getElementById("commitTableBody");
+            tbody.innerHTML = ""; // clear old rows
+            
+            if (!dev || !Array.isArray(dev.commits) || dev.commits.length === 0) {
+              tbody.innerHTML = `
+                <tr><td colspan="6" style="text-align:center; opacity:0.7;">No commits available</td></tr>
+              `;
+              return;
+            }
+            dev.commits.forEach(commit => {
+              const d = new Date(commit.committer_date);
+              const date = d.toLocaleDateString();
+              const time = d.toLocaleTimeString();
+              const commitUrl = `https://github.com/google/${data.repo_name}/commit/${commit.sha}`;
+
+              const row = document.createElement("tr");
+              //this is what i need to edit
+              row.innerHTML = `
+                <td>${date}</td>
+                <td>${time}</td>
+                <td>${commit.msg || "—"}</td>
+                <td>${commit.ci_result || "—"}</td>
+                <td>+${commit.insertions || 0} / -${commit.deletions || 0}</td>
+                <td><a href="${commit.commitUrl}" target="_blank">View</a></td>
+              `;
+              //end of what i need to edit
+              tbody.appendChild(row);
+            });
+          }
 
           setHeading({ name, email });
           renderCiBarChart(ciTotals, totalCiRuns);
-
+          renderCommitTable(dev);
         }
 
         // Populate the <ul> based on filter
