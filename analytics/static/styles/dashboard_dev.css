@@ -1,4 +1,5 @@
-@import url('variables.css');
+@import url('../css/variables.css');
+
 
 .activity-card {
     background: var(--color-primary);        
@@ -213,3 +214,21 @@
     max-width: unset;
   }
 }
+/*abby work below*/
+    .chart-container {
+        display: flex;
+        align-items: flex-end; /* For vertical bars */
+        height: 200px;
+        border-left: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .bar {
+        width: 30px; /* Or height for horizontal bars */
+        background-color: #3498db;
+        margin-right: 5px;
+    }
+
+    .percentage-80 { height: 80%; }
+    .percentage-60 { height: 60%; }
+    .percentage-40 { height: 40%; }

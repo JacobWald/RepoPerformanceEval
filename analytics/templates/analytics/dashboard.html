@@ -166,7 +166,7 @@
       // Not on devs tab
       return;
     }
-
+    let ciChart = null;
     const jsonUrl = panel.dataset.jsonUrl;
     console.log("dev panel jsonUrl:", jsonUrl);
     if (!jsonUrl) return;
@@ -312,48 +312,75 @@
               ? `${ciFailures}/${totalCiRuns} (${failurePct}% failed)`
               : "n/a"
           );
-          function renderCiBarChart(ciTotals) {
+          
+
+          function renderCiBarChart(ciTotals, totalCiRuns) {
             const ctx = document.getElementById("ciBarChart");
-            const successCount = ciTotals.success || 0;
-            const failedCount  = ciTotals.failure || 0;
-            const skippedCount = ciTotals.skipped || 0;
+
+            console.log("renderCiBarChart called with:", 
+              {ciTotals, totalCiRuns}
+            );
+
             if (!ctx) {
               console.warn("ciBarChart canvas not found");
               return;
             }
 
-            new Chart(ctx, {
+            if (ciChart) {
+                ciChart.destroy(); // ❗ necessary for updating scales or data
+            }
+
+            const successCount = ciTotals.success || 0
+            const failedCount = ciTotals.failure || 0
+            const skippedCount = totalCiRuns - successCount - failedCount
+            //const barColor = styles.getPropertyValue("--color-secondary").trim();
+
+            ciChart = new Chart(ctx, {
               type: "bar",
               data: {
                 labels: ["Success", "Failed", "Skipped"],
                 datasets: [
                   {
-                    label: "CI Runs",
+                    label: "",
                     data: [successCount, failedCount, skippedCount],
-                    backgroundColor: [
-                      "rgba(75, 192, 192, 0.7)",  // success
-                      "rgba(255, 99, 132, 0.7)",  // failed
-                      "rgba(255, 205, 86, 0.7)"   // skipped
-                    ],
-                    borderColor: [
-                      "rgba(75, 192, 192, 1)",
-                      "rgba(255, 99, 132, 1)",
-                      "rgba(255, 205, 86, 1)"
-                    ],
-                    borderWidth: 1
+                    backgroundColor: 'white',
+                    //borderColor: 'white',
+                    //borderWidth: 1.5
+                    
                   }
                 ]
               },
               options: {
+                indexAxis: "y", // ← MAKES THE CHART HORIZONTAL
+                plugins: {
+                  legend: {
+                    display: false   // hides legend completely
+                  },
+                  title: {
+                    display: true,
+                    text: "CI Runs",
+                    color: "white",
+                    font: { size: 18 }
+                  }
+                },
                 scales: {
-                  y: { beginAtZero: true }
+                  x: {
+                    beginAtZero: true,
+                    ticks: { color: "white" },
+                    grid: { color: "rgba(255,255,255,0.2)" }
+                  },
+                  y: {
+                    ticks: { color: "white" },
+                    grid: { color: "rgba(255,255,255,0.2)" }
+                  }
                 }
               }
             });
           }
 
           setHeading({ name, email });
-          renderCiBarChart(ciTotals);
+          renderCiBarChart(ciTotals, totalCiRuns);
+
         }
 
         // Populate the <ul> based on filter
