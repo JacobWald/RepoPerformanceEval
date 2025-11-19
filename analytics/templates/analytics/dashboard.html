@@ -1,5 +1,6 @@
 {% extends "analytics/base.html" %} {% load static %} {% block content %}
 <link rel="stylesheet" href="{% static 'styles/dashboard.css' %}" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="dashboard-container">
   <!-- Header -->
@@ -40,6 +41,7 @@
 </div>
 
 <script>
+  // -------Overall Project Summary Bar--------
   function initActivityBar() {
     const container = document.getElementById("activity-bar");
     if (!container) {
@@ -158,7 +160,189 @@
       });
   }
 
-  // NEW: Developer-specific init
+  // -------CI Reliability Charts--------
+  let ciCharts = [];
+
+  function initCiReliabilityCharts() {
+    const weeklyCanvas = document.getElementById("ci-weekly-chart");
+    const weeklyCommitsCanvas = document.getElementById("ci-weekly-commits-chart");
+    if (!weeklyCanvas && !weeklyCommitsCanvas) return;
+
+    const activity = document.getElementById("activity-bar");
+    if (!activity) return;
+
+    const jsonUrl = activity.dataset.jsonUrl;
+    if (!jsonUrl) return;
+
+    // destroy any old charts when re-opening tab
+    ciCharts.forEach((c) => c && c.destroy && c.destroy());
+    ciCharts = [];
+
+    // helper: derive ISO week bucket "YYYY-Www" from ISO date string
+    function isoWeekBucketFromIsoString(iso) {
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (isNaN(d)) return null;
+
+      // work in UTC to avoid TZ issues
+      const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = utc.getUTCDay() || 7;       // 1=Mon ... 7=Sun
+      utc.setUTCDate(utc.getUTCDate() + 4 - dayNum); // move to Thursday
+
+      const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil(((utc - yearStart) / 86400000 + 1) / 7);
+
+      return (
+        utc.getUTCFullYear() +
+        "-W" +
+        String(weekNo).padStart(2, "0")
+      );
+    }
+
+    fetch(jsonUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then((data) => {
+        const summary = data.repo_summary || {};
+        const weeklyCi = summary.ci_weekly_success_failure || {};
+
+        // theme colors from CSS variables
+        const styles = getComputedStyle(document.documentElement);
+        const colorPrimary =
+          styles.getPropertyValue("--color-primary").trim() || "#555879";
+        const colorSecondary =
+          styles.getPropertyValue("--color-secondary").trim() || "#DED3C4";
+        const colorFailure = "#e76f51";
+
+        // ---------- Chart 1: weekly CI success vs failure (unchanged) ----------
+        if (weeklyCanvas) {
+          const weeks = Object.keys(weeklyCi).sort();
+          const success = weeks.map((w) => weeklyCi[w].success || 0);
+          const failure = weeks.map((w) => weeklyCi[w].failure || 0);
+
+          const weeklyChart = new Chart(weeklyCanvas.getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: weeks,
+              datasets: [
+                {
+                  label: "Successful runs",
+                  data: success,
+                  backgroundColor: colorPrimary,
+                  stack: "ci",
+                },
+                {
+                  label: "Failed runs",
+                  data: failure,
+                  backgroundColor: colorFailure,
+                  stack: "ci",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: "bottom" },
+                title: { display: false },
+              },
+              scales: {
+                x: { stacked: true },
+                y: {
+                  stacked: true,
+                  beginAtZero: true,
+                  title: { display: true, text: "CI runs per week" },
+                },
+              },
+            },
+          });
+
+          ciCharts.push(weeklyChart);
+        }
+
+        // ---------- Chart 2: weekly commits vs failed CI runs ----------
+        if (weeklyCommitsCanvas) {
+          // Count commits per ISO week bucket
+          const weeklyCommits = {};
+          (data.authors || []).forEach((author) => {
+            (author.commits || []).forEach((c) => {
+              const bucket = isoWeekBucketFromIsoString(c.author_date);
+              if (!bucket) return;
+              weeklyCommits[bucket] = (weeklyCommits[bucket] || 0) + 1;
+            });
+          });
+
+          // Combine all week keys from commits + CI failure stats
+          const allWeeks = Array.from(
+            new Set([
+              ...Object.keys(weeklyCommits),
+              ...Object.keys(weeklyCi),
+            ])
+          ).sort();
+
+          const commitsData = allWeeks.map((w) => weeklyCommits[w] || 0);
+          const failuresData = allWeeks.map(
+            (w) => (weeklyCi[w] && weeklyCi[w].failure) || 0
+          );
+
+          const weeklyCommitsChart = new Chart(
+            weeklyCommitsCanvas.getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: allWeeks,
+                datasets: [
+                  {
+                    label: "Commits",
+                    data: commitsData,
+                    backgroundColor: colorPrimary,
+                    yAxisID: "y",
+                  },
+                  {
+                    label: "Failed CI runs",
+                    data: failuresData,
+                    backgroundColor: colorFailure,
+                    yAxisID: "y1",
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { position: "bottom" },
+                  title: { display: false },
+                },
+                scales: {
+                  x: {
+                    stacked: false,
+                  },
+                  y: {
+                    beginAtZero: true,
+                    title: { display: true, text: "Commits per week" },
+                  },
+                  y1: {
+                    beginAtZero: true,
+                    position: "right",
+                    grid: { drawOnChartArea: false },
+                    title: {
+                      display: true,
+                      text: "Failed CI runs per week",
+                    },
+                  },
+                },
+              },
+            }
+          );
+
+          ciCharts.push(weeklyCommitsChart);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load CI reliability data", err);
+      });
+  }
+  // -------Developer Specific Panel--------
   function initDeveloperPanel() {
     const panel = document.getElementById("developer-panel");
     if (!panel) {
@@ -437,6 +621,7 @@
           setActiveButton(activeBtn);
           // Re-init tab-specific JS after HTML is injected
           initActivityBar();
+          initCiReliabilityCharts();
           initDeveloperPanel();
         });
     }
