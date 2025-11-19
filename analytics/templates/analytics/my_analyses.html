@@ -10,7 +10,11 @@
 {% if analyses %}
   <div class="analysis-list">
     {% for a in analyses %}
-      <a class="analysis-card" href="{% url 'analysis_dashboard' a.id %}">
+      <div
+        class="analysis-card"
+        data-url="{% url 'analysis_dashboard' analysis_id=a.id %}"
+        onclick="window.location.href=this.dataset.url"
+      >
         <div class="analysis-card-left">
           <div class="analysis-repo-name">{{ a.repository.name }}</div>
           <div class="analysis-meta">
@@ -20,9 +24,15 @@
         </div>
 
         <div class="analysis-card-right">
-            <span class="analysis-json-pill">View Analysis</span>
+          <a
+            class="analysis-json-pill"
+            href="{% url 'analysis_refresh' analysis_id=a.id %}"
+            onclick="event.stopPropagation();"
+          >
+            Refresh Analysis
+          </a>
         </div>
-      </a>
+      </div>
     {% endfor %}
   </div>
 {% else %}

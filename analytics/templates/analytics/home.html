@@ -1,11 +1,47 @@
 ﻿{% extends "analytics/base.html" %}
+{% load static %}
+
 {% block title %}Home{% endblock %}
+
 {% block content %}
-<h2>Analyze a repository</h2>
-<form method="post" action="{% url 'analyze_repo' %}">
-  {% csrf_token %}
-  <input name="repo_url" placeholder="https://github.com/owner/repo" style="width:28rem" required>
-  <button type="submit">Analyze</button>
-</form>
-<p><a href="{% url 'logout' %}">Log out</a></p>
+<link rel="stylesheet" href="{% static 'styles/home.css' %}">
+
+<div class="home-container">
+
+    <div class="home-card">
+
+        <h1 class="welcome-title">RepoPerformanceEval</h1>
+
+        <p class="welcome-blurb">
+            Welcome to <strong>Repo Performance Eval</strong> — your lightweight tool for
+            analyzing GitHub repositories, visualizing developer activity, and reviewing
+            project health trends over the last 45 days.
+        </p>
+
+        <hr class="divider">
+
+        <h2 class="home-title">Analyze a Repository</h2>
+
+        <form method="post" action="{% url 'analyze_repo' %}" class="home-form">
+            {% csrf_token %}
+
+            <div class="input-wrapper">
+                <img src="{% static 'icons/github.svg' %}" class="github-icon">
+                <input
+                    name="repo_url"
+                    class="home-input"
+                    placeholder="https://github.com/owner/repo"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="home-button">
+                Run Analysis
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
 {% endblock %}

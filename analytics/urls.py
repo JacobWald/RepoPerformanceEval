@@ -11,6 +11,8 @@ urlpatterns = [
     path("progress/<str:job_id>/", views.progress_page, name="progress"),
     path("progress/<str:job_id>/stream/", views.stream_progress, name="progress_stream"),
     path("analyses/", views.my_analyses, name="my_analyses"),
+    path("analysis/<uuid:analysis_id>/refresh/", views.refresh_analysis, name="analysis_refresh"),
+
     
     path("analysis/<uuid:analysis_id>/dashboard/", views.analysis_dashboard, name="analysis_dashboard"),
     path("analysis/<uuid:analysis_id>/dashboard/overall/", views.analysis_dashboard_overall, name="analysis_dashboard_overall"),
