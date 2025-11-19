@@ -1,6 +1,8 @@
 {% extends "analytics/base.html" %} {% load static %} {% block content %}
 <link rel="stylesheet" href="{% static 'styles/dashboard.css' %}" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="../css/variables.css">
+
 
 <div class="dashboard-container">
   <!-- Header -->
@@ -513,6 +515,10 @@
             const failedCount = ciTotals.failure || 0
             const skippedCount = totalCiRuns - successCount - failedCount
             //const barColor = styles.getPropertyValue("--color-secondary").trim();
+            const colorSecondary = getComputedStyle(document.documentElement)
+              .getPropertyValue('--color-secondary')
+              .trim();
+
 
             ciChart = new Chart(ctx, {
               type: "bar",
@@ -522,7 +528,7 @@
                   {
                     label: "",
                     data: [successCount, failedCount, skippedCount],
-                    backgroundColor: 'white',
+                    backgroundColor: colorSecondary,
                     //borderColor: 'white',
                     //borderWidth: 1.5
                     
@@ -531,6 +537,8 @@
               },
               options: {
                 indexAxis: "y", // ← MAKES THE CHART HORIZONTAL
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                   legend: {
                     display: false   // hides legend completely
@@ -538,19 +546,19 @@
                   title: {
                     display: true,
                     text: "CI Runs",
-                    color: "white",
+                    color: colorSecondary,
                     font: { size: 18 }
                   }
                 },
                 scales: {
                   x: {
                     beginAtZero: true,
-                    ticks: { color: "white" },
-                    grid: { color: "rgba(255,255,255,0.2)" }
+                    ticks: { color: colorSecondary},
+                    grid: { color: colorSecondary }
                   },
                   y: {
-                    ticks: { color: "white" },
-                    grid: { color: "rgba(255,255,255,0.2)" }
+                    ticks: { color: colorSecondary},
+                    grid: { color:colorSecondary }
                   }
                 }
               }
@@ -570,7 +578,7 @@
               const d = new Date(commit.committer_date);
               const date = d.toLocaleDateString();
               const time = d.toLocaleTimeString();
-              const commitUrl = `https://github.com/google/${data.repo_name}/commit/${commit.sha}`;
+              const commitUrl = `https://github.com/google/${data.repo_name}/commit/${commit.hash}`;
 
               const row = document.createElement("tr");
               //this is what i need to edit
@@ -580,7 +588,7 @@
                 <td>${commit.msg || "—"}</td>
                 <td>${commit.ci_result || "—"}</td>
                 <td>+${commit.insertions || 0} / -${commit.deletions || 0}</td>
-                <td><a href="${commit.commitUrl}" target="_blank">View</a></td>
+                <td><a href="${commitUrl}" targets="_blank">View</a></td>
               `;
               //end of what i need to edit
               tbody.appendChild(row);
