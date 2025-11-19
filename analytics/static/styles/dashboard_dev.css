@@ -1,4 +1,5 @@
-@import url('variables.css');
+@import url('../css/variables.css');
+
 
 .activity-card {
     background: var(--color-primary);        
@@ -213,3 +214,44 @@
     max-width: unset;
   }
 }
+/*abby work below*/
+    .chart-container {
+        display: flex;
+        align-items: flex-end; /* For vertical bars */
+        height: 200px;
+        border-left: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .bar {
+        width: 30px; /* Or height for horizontal bars */
+        background-color: #3498db;
+        margin-right: 5px;
+    }
+
+    .percentage-80 { height: 80%; }
+    .percentage-60 { height: 60%; }
+    .percentage-40 { height: 40%; }
+
+    .commit-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      color: var(--color-primary);
+      border: 1px solid #333;
+    }
+
+    .commit-table th, .commit-table td {
+      padding: 10px;
+      border-bottom: 1px solid #333;
+    }
+    .commit-table th {
+      background: var(--color-secondary-alt);
+      text-align: left;
+      font-weight: 600;
+    }
+    .commit-table a {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }

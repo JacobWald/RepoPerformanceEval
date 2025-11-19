@@ -1,4 +1,4 @@
-@import url('variables.css');
+@import url('../css/variables.css');
 
 .activity-card {
   background: var(--color-primary);        

@@ -1,5 +1,6 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'styles/dashboard_dev.css' %}" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <section>
   <div
@@ -106,6 +107,31 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="activity-card">
+        <!--graph -->
+        <div class="ci-bar-chart-container">
+          <canvas id="ciBarChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+    <div class="activity-card">
+        <!--expanldable table listing-->
+        <table id="commitTable" class="commit-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Commit Message</th>
+              <th>CI Result</th>
+              <th>Lines +/-</th>
+              <th>Link</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="commitTableBody"></tbody>
+        </table>
+    </div>
+    </div>
     </div>
   </div>
 </section>
