@@ -15,6 +15,16 @@
       <div class="repo-summary-main">
         <div class="repo-name">{{ repo.name }}</div>
         <div class="repo-url">{{ repo.url }}</div>
+        <div class="repo-mined-at">Mined at: {{ analysis.mined_at }}</div>
+      </div>
+
+      <div class="repo-summary-actions">
+        <a
+          class="refresh-pill"
+          href="{% url 'analysis_refresh' analysis_id=analysis.id %}"
+        >
+          Refresh Analysis
+        </a>
       </div>
     </div>
   </div>

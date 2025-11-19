@@ -223,18 +223,23 @@ def _run_miner_and_upload(job_id: str, repo: Repository, sb_user_uuid: uuid.UUID
         JOBS[job_id].update(done=True, ok=False)
         return
 
-    # Create an Analysis row for this run
-    analysis = Analysis.objects.create(
+    # Create or update the Analysis row for this user+repo
+    analysis, created = Analysis.objects.get_or_create(
         user_id=sb_user_uuid,
         repository=repo,
-        mined_at=timezone.now(),
-        json_url=public_url,
-        # Optionally: parse candidate1 to compute quick summary stats:
-        # summary={"ci": {"success": X, "failure": Y, ...}, "total_commits": N}
+        defaults={
+            "mined_at": timezone.now(),
+            "json_url": public_url,
+        },
     )
-    
-    # store analysis id for redirecting to dashboard
-    JOBS[job_id]["analysis_id"] = str(analysis.id)    
+
+    if not created:
+        # Refresh existing analysis
+        analysis.mined_at = timezone.now()
+        analysis.json_url = public_url
+        analysis.save(update_fields=["mined_at", "json_url"])
+
+    JOBS[job_id]["analysis_id"] = str(analysis.id)  
 
     JOBS[job_id]["done"] = True
     _enqueue(job_id, "DONE")
@@ -329,6 +334,24 @@ def my_analyses(request):
         .order_by("-mined_at")
     )
     return render(request, "analytics/my_analyses.html", {"analyses": rows})
+
+@require_supabase_login
+def refresh_analysis(request, analysis_id: uuid.UUID):
+    sb_user = request.session.get("sb_user") or {}
+    sb_user_uuid = _uuid_from_session(sb_user)
+
+    # Make sure this analysis belongs to the logged-in user
+    analysis = get_object_or_404(
+        Analysis.objects.select_related("repository"),
+        pk=analysis_id,
+        user_id=sb_user_uuid,
+    )
+    repo = analysis.repository
+
+    # Just start another background job for this repo
+    job_id = _start_background_job(repo, sb_user_uuid)
+    return redirect("progress", job_id=job_id)
+
 
 @require_supabase_login
 def analysis_dashboard(request, analysis_id: int):
