@@ -54,6 +54,21 @@
 
 <script>
   const REPO_URL = "{{ repo.url|escapejs }}";
+
+let commitTimeChart = null;
+let commitTimeBucketDevCounts = [];
+let commitTimeDevMeta = {};
+
+const COMMIT_TIME_BUCKETS = [
+  // Night: 8pm–8am (20–24 and 0–8)
+  { id: "night",  label: "8pm–8am", isNight: true },
+  { id: "08-10",  label: "8–10",    start: 8,  end: 10 },
+  { id: "10-12",  label: "10–12",   start: 10, end: 12 },
+  { id: "12-14",  label: "12–2",    start: 12, end: 14 },
+  { id: "14-16",  label: "2–4",     start: 14, end: 16 },
+  { id: "16-18",  label: "4–6",     start: 16, end: 18 },
+  { id: "18-20",  label: "6–8",     start: 18, end: 20 },
+];
   // -------Overall Project Summary Bar--------
   function initActivityBar() {
     const container = document.getElementById("activity-bar");
@@ -355,133 +370,453 @@
         console.error("Failed to load CI reliability data", err);
       });
   }
-  // -------Developer Specific Panel--------
-  function initDeveloperPanel() {
-    const panel = document.getElementById("developer-panel");
-    const smallCard = panel.querySelector(".small-activity-card");
-    const commitsCard = panel.querySelector(".commit-table").closest(".activity-card");
-    if (!panel) {
-      // Not on devs tab
-      return;
+
+  function initCommitTimeChart() {
+  const canvas = document.getElementById("commit-hours-bar");
+  if (!canvas) return; // not on overall tab
+
+  const activity = document.getElementById("activity-bar");
+  if (!activity) return;
+
+  const jsonUrl = activity.dataset.jsonUrl;
+  if (!jsonUrl) return;
+
+  // Destroy previous chart if tab reloaded
+  if (commitTimeChart && commitTimeChart.destroy) {
+    commitTimeChart.destroy();
+    commitTimeChart = null;
+  }
+
+  fetch(jsonUrl)
+    .then((res) => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then((data) => {
+      const authors = data.authors || [];
+
+      const bucketCounts = new Array(COMMIT_TIME_BUCKETS.length).fill(0);
+      commitTimeBucketDevCounts = COMMIT_TIME_BUCKETS.map(() => ({})); // index -> {devKey: count}
+      commitTimeDevMeta = {};
+
+      let totalTimedCommits = 0;
+
+      (authors || []).forEach((author) => {
+  const name = author.name || "Unknown";
+  const email = author.email || "";
+  const devKey = email || name;
+
+  if (!commitTimeDevMeta[devKey]) {
+    commitTimeDevMeta[devKey] = { name, email };
+  }
+
+  (author.commits || []).forEach((c) => {
+    let h = c.author_hour;
+    if (typeof h !== "number" || h < 0 || h >= 24) return;
+
+    totalTimedCommits += 1;
+
+    const idx = COMMIT_TIME_BUCKETS.findIndex((b) => {
+      if (b.id === "night") {
+        return h < 8 || h >= 20;   // 8pm–8am
+      }
+      return b.start !== undefined && h >= b.start && h < b.end;
+    });
+
+    if (idx >= 0) {
+      bucketCounts[idx] += 1;
+
+      const devCounts = commitTimeBucketDevCounts[idx];
+      devCounts[devKey] = (devCounts[devKey] || 0) + 1;
     }
-    let ciChart = null;
-    const jsonUrl = panel.dataset.jsonUrl;
-    console.log("dev panel jsonUrl:", jsonUrl);
-    if (!jsonUrl) return;
+  });
+});
 
-    fetch(jsonUrl)
-      .then((res) => {
-        console.log("fetch status (devs):", res.status);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("analytics JSON loaded (devs):", data);
-        const authors = data.authors || [];
+      const labels = COMMIT_TIME_BUCKETS.map((b) => b.label);
+      const dataPoints = bucketCounts;
 
-        const dropdown = panel.querySelector("#dev-dropdown");
-        const toggleBtn = panel.querySelector("#dev-dropdown-toggle");
-        const labelSpan = panel.querySelector("#dev-dropdown-label");
-        const menu = panel.querySelector("#dev-dropdown-menu");
-        const searchInput = panel.querySelector("#dev-dropdown-search");
-        const listEl = panel.querySelector("#dev-dropdown-list");
+      const styles = getComputedStyle(document.documentElement);
+      const colorPrimary =
+        styles.getPropertyValue("--color-primary").trim() || "#555879";
+      const colorPrimaryAlt =
+        styles.getPropertyValue("--color-primary-alt").trim() || "#98A1BC";
+      const colorFailure = "#e76f51"; // orange for night bucket
 
-        const titleEl = panel.querySelector("#dev-insights-title");
-        const subtitleEl = panel.querySelector("#dev-insights-subtitle");
+      const barColors = COMMIT_TIME_BUCKETS.map((b) =>
+        b.id === "night" ? colorFailure : colorPrimaryAlt
+      );
 
-        if (!dropdown || !toggleBtn || !menu || !searchInput || !listEl) {
-          console.warn("Developer dropdown elements not found");
+      const ctx = canvas.getContext("2d");
+
+      commitTimeChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Commits",
+              data: dataPoints,
+              backgroundColor: barColors,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const v = context.parsed.y || 0;
+                  const pct = totalTimedCommits
+                    ? ((v / totalTimedCommits) * 100).toFixed(1)
+                    : "0.0";
+                  return `${v} commits (${pct}%)`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                maxRotation: 0,
+                minRotation: 0,
+              },
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Commits",
+              },
+              precision: 0,
+            },
+          },
+          // We'll handle click via canvas handler below
+        },
+      });
+
+      // Click handler: show developers for clicked bucket
+      canvas.onclick = function (evt) {
+        if (!commitTimeChart) return;
+        const points = commitTimeChart.getElementsAtEventForMode(
+          evt,
+          "nearest",
+          { intersect: true },
+          true
+        );
+        if (!points.length) return;
+
+        const idx = points[0].index;
+        showCommitTimeBucketDevelopers(idx);
+      };
+    })
+    .catch((err) => {
+      console.error("Failed to load commit time data", err);
+    });
+}
+
+// Helper: populate table with developers for a given bucket
+function showCommitTimeBucketDevelopers(bucketIndex) {
+  const tbody = document.getElementById("commit-hours-dev-tbody");
+  const selectedEl = document.getElementById("commit-hours-selected");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  const bucket = COMMIT_TIME_BUCKETS[bucketIndex];
+  const devCounts = commitTimeBucketDevCounts[bucketIndex] || {};
+  const entries = Object.entries(devCounts).sort((a, b) => b[1] - a[1]);
+
+  if (selectedEl) {
+    if (bucket) {
+      selectedEl.textContent = `Developers committing in: ${bucket.label}`;
+    } else {
+      selectedEl.textContent = "No time window selected.";
+    }
+  }
+
+  if (!entries.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td colspan="3">No commits in this time window.</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  entries.forEach(([devKey, count]) => {
+    const meta = commitTimeDevMeta[devKey] || {};
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${meta.name || devKey}</td>
+      <td>${meta.email || ""}</td>
+      <td>${count}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+  // -------Commit Type Pie Chart (overall)--------
+let commitTypeChart = null;
+
+function initCommitTypeChart() {
+  const canvas = document.getElementById("commit-type-pie");
+  if (!canvas) return; // only on overall tab
+
+  const activity = document.getElementById("activity-bar");
+  if (!activity) return;
+
+  const jsonUrl = activity.dataset.jsonUrl;
+  if (!jsonUrl) return;
+
+  // Destroy previous chart if re-opening tab
+  if (commitTypeChart && commitTypeChart.destroy) {
+    commitTypeChart.destroy();
+    commitTypeChart = null;
+  }
+
+  fetch(jsonUrl)
+    .then((res) => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then((data) => {
+      const authors = data.authors || [];
+
+      let bugFixCount = 0;
+      let refactorCount = 0;
+      let featureCount = 0;
+      let otherCount = 0;
+
+      authors.forEach((author) => {
+        (author.commits || []).forEach((c) => {
+          const msgRaw = (c.msg || "").trim();
+          if (!msgRaw) return;
+
+          const msg = msgRaw.toLowerCase();
+
+          // Priority: bug -> refactor -> feature -> other
+          if (msg.startsWith("fix") || msg.includes("bug fix")) {
+            bugFixCount += 1;
+          } else if (msg.startsWith("refactor") || msg.includes("refactor")) {
+            refactorCount += 1;
+          } else if (msg.startsWith("feature") || msg.includes("feature")) {
+            featureCount += 1;
+          } else {
+            otherCount += 1;
+          }
+        });
+      });
+
+      const total =
+        bugFixCount + refactorCount + featureCount + otherCount || 1;
+
+      // theme colors from CSS variables (same ones you used in CI charts)
+      const styles = getComputedStyle(document.documentElement);
+      const colorPrimary =
+        styles.getPropertyValue("--color-primary").trim() || "#555879";       // purple
+      const colorPrimaryAlt =
+        styles.getPropertyValue("--color-primary-alt").trim() || "#98A1BC";   // light purple
+      const colorSecondary =
+        styles.getPropertyValue("--color-secondary").trim() || "#DED3C4";     // beige
+      const colorFailure = "#e76f51";                                         // orange (same as CI failure)
+
+      const labels = [
+        `Bug fixes (${bugFixCount})`,
+        `Refactors (${refactorCount})`,
+        `Features (${featureCount})`,
+        `Other (${otherCount})`,
+      ];
+
+      const dataPoints = [
+        bugFixCount,
+        refactorCount,
+        featureCount,
+        otherCount,
+      ];
+
+      const ctx = canvas.getContext("2d");
+      commitTypeChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              data: dataPoints,
+              backgroundColor: [
+              colorSecondary,      // bug fixes  – purple
+                colorFailure,      // refactors  – orange
+                colorPrimaryAlt,   // features   – light purple
+                colorPrimary,    // other      – beige
+              ],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: "bottom",
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const label = context.label || "";
+                  const value = context.parsed || 0;
+                  const pct = ((value / total) * 100).toFixed(1);
+                  return `${label}: ${value} (${pct}%)`;
+                },
+              },
+            },
+          },
+        },
+      });
+    })
+    .catch((err) => {
+      console.error("Failed to load commit type data", err);
+    });
+}
+
+  // -------Developer Specific Panel--------
+  // -------Developer Specific Panel--------
+function initDeveloperPanel() {
+  const panel = document.getElementById("developer-panel");
+  if (!panel) {
+    // Not on devs tab
+    return;
+  }
+
+  const smallCard = panel.querySelector(".small-activity-card");
+  const commitsTable = panel.querySelector(".commit-table");
+  const commitsCard = commitsTable ? commitsTable.closest(".activity-card") : null;
+
+  let ciChart = null;
+  const jsonUrl = panel.dataset.jsonUrl;
+  console.log("dev panel jsonUrl:", jsonUrl);
+  if (!jsonUrl) return;
+
+  fetch(jsonUrl)
+    .then((res) => {
+      console.log("fetch status (devs):", res.status);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then((data) => {
+      console.log("analytics JSON loaded (devs):", data);
+      const authors = data.authors || [];
+      const mining = data.mining_params || {};
+      const daysWindow = mining.days_window || null;
+      const minedAtStr = data.mined_at || null;
+      const minedAtDate = minedAtStr ? new Date(minedAtStr) : null;
+
+      const dropdown = panel.querySelector("#dev-dropdown");
+      const toggleBtn = panel.querySelector("#dev-dropdown-toggle");
+      const labelSpan = panel.querySelector("#dev-dropdown-label");
+      const menu = panel.querySelector("#dev-dropdown-menu");
+      const searchInput = panel.querySelector("#dev-dropdown-search");
+      const listEl = panel.querySelector("#dev-dropdown-list");
+
+      const titleEl = panel.querySelector("#dev-insights-title");
+      const subtitleEl = panel.querySelector("#dev-insights-subtitle");
+
+      if (!dropdown || !toggleBtn || !menu || !searchInput || !listEl) {
+        console.warn("Developer dropdown elements not found");
+        return;
+      }
+
+      function setStat(key, text) {
+        const el = panel.querySelector(`[data-dev-stat="${key}"]`);
+        if (el) el.textContent = text;
+      }
+
+      function setHeading(dev) {
+        if (!titleEl || !subtitleEl) return;
+
+        if (!dev) {
+          titleEl.textContent = "Developer Insights";
+          subtitleEl.textContent =
+            "Select a developer from the dropdown to see per-developer statistics.";
           return;
         }
 
-        function setStat(key, text) {
-          const el = panel.querySelector(`[data-dev-stat="${key}"]`);
-          if (el) el.textContent = text;
+        const name = dev.name || "Unknown developer";
+        const email = dev.email || "";
+
+        titleEl.textContent = `Insights for ${name}`;
+        subtitleEl.textContent = email || "";
+      }
+
+      function renderDeveloper(dev) {
+        // When nothing selected / no dev
+        if (!dev) {
+          setStat("commits", "–");
+          setStat("lines", "–");
+          setStat("streak", "–");
+          setStat("active-day", "–");
+          setStat("active-hour", "–");
+          setStat("ci-failure-ratio", "–");
+          setStat("ci-runs", "–");
+
+          setStat("last-active", "–");
+          setStat("last-active-date", "–");
+          setStat("active-days", "–");
+          setStat("window-length", "–");
+          setStat("weekend-share", "–");
+          setStat("weekend-count", "–");
+
+          setHeading(null);
+          if (smallCard) smallCard.style.display = "none";
+          if (commitsCard) commitsCard.style.display = "none";
+          return;
         }
 
-        function setHeading(dev) {
-          if (!titleEl || !subtitleEl) return;
+        if (smallCard) smallCard.style.display = "";
+        if (commitsCard) commitsCard.style.display = "";
 
-          if (!dev) {
-            titleEl.textContent = "Developer Insights";
-            subtitleEl.textContent =
-              "Select a developer from the dropdown to see per-developer statistics.";
-            return;
+        const name = dev.name || "Unknown";
+        const email = dev.email || "–";
+        const commits =
+          dev.commit_count ||
+          (Array.isArray(dev.commits) ? dev.commits.length : 0) ||
+          0;
+        const insertions = dev.total_insertions || 0;
+        const deletions = dev.total_deletions || 0;
+        const avgStreak =
+          typeof dev.average_streak_days === "number"
+            ? dev.average_streak_days.toFixed(2)
+            : "n/a";
+
+        // ----- Most active weekday -----
+        const weekdayFreq = dev.weekday_frequency || {};
+        let bestDay = "n/a";
+        let bestDayCount = 0;
+        Object.entries(weekdayFreq).forEach(([day, count]) => {
+          if (count > bestDayCount) {
+            bestDay = day;
+            bestDayCount = count;
           }
+        });
 
-          const name = dev.name || "Unknown developer";
-          const email = dev.email || "";
-
-          titleEl.textContent = `Insights for ${name}`;
-          subtitleEl.textContent = email || "";
-        }
-
-        function renderDeveloper(dev) {
-          if (!dev) {
-            setStat("commits", "–");
-            setStat("lines", "–");
-            setStat("streak", "–");
-            setStat("active-day", "–");
-            setStat("active-hour", "–");
-            setStat("ci-failure-ratio", "–");
-            setStat("ci-runs", "–");
-            setHeading(null);
-            if (smallCard) smallCard.style.display = "none";
-            if (commitsCard) commitsCard.style.display = "none";
-            return;
-          }
-
-          if (smallCard) smallCard.style.display = "";
-          if (commitsCard) commitsCard.style.display = "";
-
-          const name = dev.name || "Unknown";
-          const email = dev.email || "–";
-          const commits =
-            dev.commit_count ||
-            (Array.isArray(dev.commits) ? dev.commits.length : 0) ||
-            0;
-          const insertions = dev.total_insertions || 0;
-          const deletions = dev.total_deletions || 0;
-          const avgStreak =
-            typeof dev.average_streak_days === "number"
-              ? dev.average_streak_days.toFixed(2)
-              : "n/a";
-
-          // Most active weekday
-          const weekdayFreq = dev.weekday_frequency || {};
-          let bestDay = "n/a";
-          let bestDayCount = 0;
-          Object.entries(weekdayFreq).forEach(([day, count]) => {
-            if (count > bestDayCount) {
-              bestDay = day;
-              bestDayCount = count;
+        // ----- Most active hour from commits[].author_hour -----
+        let bestHourLabel = "n/a";
+        if (Array.isArray(dev.commits) && dev.commits.length > 0) {
+          const hourCounts = new Array(24).fill(0);
+          dev.commits.forEach((c) => {
+            const h = c.author_hour;
+            if (typeof h === "number" && h >= 0 && h < 24) {
+              hourCounts[h] += 1;
             }
           });
 
-          // Most active hour from dev.commits[].author_hour
-          let bestHourLabel = "n/a";
-          if (Array.isArray(dev.commits) && dev.commits.length > 0) {
-            const hourCounts = new Array(24).fill(0);
-            dev.commits.forEach((c) => {
-              const h = c.author_hour;
-              if (typeof h === "number" && h >= 0 && h < 24) {
-                hourCounts[h] += 1;
-              }
-            });
-
-            let bestHour = 0;
-            let bestHourCount = 0;
-            hourCounts.forEach((count, hour) => {
-              if (count > bestHourCount) {
-                bestHour = hour;
-                bestHourCount = count;
-              }
-            });
-
-            if (bestHourCount > 0) {
-              bestHourLabel = `${bestHour}:00 hour`;
+          let bestHour = 0;
+          let bestHourCount = 0;
+          hourCounts.forEach((count, hour) => {
+            if (count > bestHourCount) {
+              bestHour = hour;
+              bestHourCount = count;
             }
-          }
+          });
 
           // CI failures / total CI runs for this dev
           const ciTotals = dev.ci_conclusions_totals || {};
@@ -642,80 +977,304 @@
             listEl.appendChild(li);
           });
 
-          if (filtered.length === 0) {
-            renderDeveloper(null);
+          if (bestHourCount > 0) {
+            bestHourLabel = `${bestHour}:00 hour`;
           }
         }
 
-        // Toggle menu open/close
-        function openMenu() {
-          dropdown.classList.add("dev-dropdown--open");
-          menu.style.display = "block";
-          searchInput.value = "";
-          populateList("");
-          searchInput.focus();
-        }
+        // ----- CI failures / total CI runs -----
+        const ciTotals = dev.ci_conclusions_totals || {};
+        const ciFailures = ciTotals.failure || 0;
+        const successCi = ciTotals.success || 0;
+        const skippedCi = ciTotals.skipped || 0;
+        const totalCiRuns = Object.values(ciTotals).reduce(
+          (sum, v) => sum + (v || 0),
+          0
+        );
+        const failurePct = totalCiRuns
+          ? ((ciFailures / totalCiRuns) * 100).toFixed(1)
+          : null;
 
-        function closeMenu() {
-          dropdown.classList.remove("dev-dropdown--open");
-          menu.style.display = "none";
-        }
+        // ----- Last commit + activity window -----
+        const dailyFreq = dev.daily_frequency || {};
+        const dailyDates = Object.keys(dailyFreq).sort(); // "YYYY-MM-DD"
 
-        toggleBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const isOpen = dropdown.classList.contains("dev-dropdown--open");
-          if (isOpen) {
-            closeMenu();
+        let lastCommitRelative = "No commits in window";
+        let lastCommitDateText = "–";
+        let activeDaysText = "–";
+        let windowText = "–";
+
+        if (dailyDates.length > 0) {
+          const lastDateStr = dailyDates[dailyDates.length - 1];
+          lastCommitDateText = `on ${lastDateStr}`;
+
+          if (minedAtDate) {
+            const lastDate = new Date(lastDateStr + "T00:00:00Z");
+            const diffMs = minedAtDate - lastDate;
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            if (!isNaN(diffDays)) {
+              if (diffDays === 0) {
+                lastCommitRelative = "today";
+              } else if (diffDays === 1) {
+                lastCommitRelative = "1 day ago";
+              } else {
+                lastCommitRelative = `${diffDays} days ago`;
+              }
+            } else {
+              lastCommitRelative = "date unknown";
+            }
           } else {
-            openMenu();
+            lastCommitRelative = "recently";
           }
-        });
 
-        // Click outside to close
-        document.addEventListener("click", (e) => {
-          if (!dropdown.contains(e.target)) {
-            closeMenu();
+          const activeCount = dailyDates.length;
+          if (daysWindow) {
+            activeDaysText = `${activeCount} of ${daysWindow} days`;
+            windowText = `Window: ${daysWindow} days`;
+          } else {
+            activeDaysText = `${activeCount} active days`;
+            windowText = "";
           }
-        });
-
-        // Search input filters list
-        searchInput.addEventListener("input", (e) => {
-          populateList(e.target.value);
-        });
-
-        // Click on list item → select dev
-        listEl.addEventListener("click", (e) => {
-          const li = e.target.closest(".dev-dropdown-item");
-          if (!li) return;
-          const key = li.dataset.key;
-
-          const dev = authors.find((a) => (a.email || a.name || "") === key);
-          if (dev) {
-            labelSpan.textContent = dev.email
-              ? `${dev.name} (${dev.email})`
-              : dev.name || "Unknown";
-            renderDeveloper(dev);
-          }
-          closeMenu();
-        });
-
-        // Initial state
-        if (authors.length === 0) {
-          labelSpan.textContent = "No developers found";
-          renderDeveloper(null);
-        } else {
-          labelSpan.textContent = "Select developer";
-          renderDeveloper(null);
         }
 
-        // Build initial list
+        // ----- Weekend vs weekday activity -----
+        const weekendCommits =
+          (weekdayFreq.Saturday || 0) + (weekdayFreq.Sunday || 0);
+
+        let weekendShareText = "No commits in window";
+        let weekendCountText = "–";
+
+        if (commits > 0) {
+          const weekendPct = (
+            (weekendCommits / commits) *
+            100
+          ).toFixed(1);
+          weekendShareText = `${weekendPct}% of commits`;
+          weekendCountText = `${weekendCommits} weekend commits`;
+        }
+
+        // ----- Write all stats into UI -----
+        setStat("commits", `${commits.toLocaleString()} commits`);
+        setStat(
+          "lines",
+          `${insertions.toLocaleString()} + / ${deletions.toLocaleString()} -`
+        );
+        setStat("streak", avgStreak);
+        setStat(
+          "active-day",
+          bestDayCount ? `${bestDay} (${bestDayCount} commits)` : "n/a"
+        );
+        setStat("active-hour", bestHourLabel);
+
+        setStat(
+          "ci-runs",
+          totalCiRuns ? `${totalCiRuns} CI runs` : "no CI data"
+        );
+        setStat(
+          "ci-failure-ratio",
+          totalCiRuns
+            ? `${ciFailures}/${totalCiRuns} (${failurePct}% failed)`
+            : "n/a"
+        );
+
+        setStat("last-active", lastCommitRelative);
+        setStat("last-active-date", lastCommitDateText);
+        setStat("active-days", activeDaysText);
+        setStat("window-length", windowText);
+        setStat("weekend-share", weekendShareText);
+        setStat("weekend-count", weekendCountText);
+
+        // ----- CI bar chart -----
+        function renderCiBarChart(ciTotals, totalCiRuns) {
+          const ctx = document.getElementById("ciBarChart");
+          if (!ctx) {
+            console.warn("ciBarChart canvas not found");
+            return;
+          }
+
+          if (ciChart) {
+            ciChart.destroy();
+          }
+
+          const successCount = ciTotals.success || 0;
+          const failedCount = ciTotals.failure || 0;
+          const skippedCount = totalCiRuns - successCount - failedCount;
+          const colorSecondary = getComputedStyle(document.documentElement)
+            .getPropertyValue("--color-secondary-alt")
+            .trim();
+
+          ciChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: ["Success", "Failed", "Skipped"],
+              datasets: [
+                {
+                  label: "",
+                  data: [successCount, failedCount, skippedCount],
+                  backgroundColor: colorSecondary,
+                },
+              ],
+            },
+            options: {
+              indexAxis: "y",
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                title: {
+                  display: true,
+                  text: "CI Runs",
+                  color: colorSecondary,
+                  font: { size: 18 },
+                },
+              },
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  ticks: { color: colorSecondary },
+                  grid: { color: colorSecondary },
+                },
+                y: {
+                  ticks: { color: colorSecondary },
+                  grid: { color: colorSecondary },
+                },
+              },
+            },
+          });
+        }
+
+        // ----- Commit table -----
+        function renderCommitTable(dev) {
+          const tbody = document.getElementById("commitTableBody");
+          if (!tbody) return;
+
+          tbody.innerHTML = ""; // clear old rows
+
+          if (!dev || !Array.isArray(dev.commits) || dev.commits.length === 0) {
+            tbody.innerHTML = `
+              <tr><td colspan="6" style="text-align:center; opacity:0.7;">No commits available</td></tr>
+            `;
+            return;
+          }
+
+          dev.commits.forEach((commit) => {
+            const d = new Date(commit.committer_date);
+            const date = d.toLocaleDateString();
+            const time = d.toLocaleTimeString();
+            const commitUrl = `https://github.com/google/${data.repo_name}/commit/${commit.hash}`;
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${date}</td>
+              <td>${time}</td>
+              <td>${commit.msg || "—"}</td>
+              <td>${commit.ci_result || "—"}</td>
+              <td>+${commit.insertions || 0} / -${commit.deletions || 0}</td>
+              <td><a href="${commitUrl}" target="_blank">View</a></td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+
+        setHeading({ name, email });
+        renderCiBarChart(ciTotals, totalCiRuns);
+        renderCommitTable(dev);
+      }
+
+      // ---------- Dropdown wiring ----------
+
+      function populateList(filterTerm = "") {
+        const term = filterTerm.trim().toLowerCase();
+        listEl.innerHTML = "";
+
+        const filtered = term
+          ? authors.filter((a) => {
+              const n = (a.name || "").toLowerCase();
+              const e = (a.email || "").toLowerCase();
+              return n.includes(term) || e.includes(term);
+            })
+          : authors;
+
+        filtered.forEach((a) => {
+          const li = document.createElement("li");
+          const valueKey = a.email || a.name || "";
+          li.dataset.key = valueKey;
+          li.className = "dev-dropdown-item";
+          li.textContent = a.email
+            ? `${a.name} (${a.email})`
+            : a.name || "Unknown";
+          listEl.appendChild(li);
+        });
+
+        if (filtered.length === 0) {
+          renderDeveloper(null);
+        }
+      }
+
+      function openMenu() {
+        dropdown.classList.add("dev-dropdown--open");
+        menu.style.display = "block";
+        searchInput.value = "";
         populateList("");
-      })
-      .catch((err) => {
-        console.error("Failed to load analytics JSON (devs)", err);
-        panel.classList.add("activity-bar--error");
+        searchInput.focus();
+      }
+
+      function closeMenu() {
+        dropdown.classList.remove("dev-dropdown--open");
+        menu.style.display = "none";
+      }
+
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains("dev-dropdown--open");
+        if (isOpen) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
       });
-  }
+
+      document.addEventListener("click", (e) => {
+        if (!dropdown.contains(e.target)) {
+          closeMenu();
+        }
+      });
+
+      searchInput.addEventListener("input", (e) => {
+        populateList(e.target.value);
+      });
+
+      listEl.addEventListener("click", (e) => {
+        const li = e.target.closest(".dev-dropdown-item");
+        if (!li) return;
+        const key = li.dataset.key;
+
+        const dev = authors.find((a) => (a.email || a.name || "") === key);
+        if (dev) {
+          labelSpan.textContent = dev.email
+            ? `${dev.name} (${dev.email})`
+            : dev.name || "Unknown";
+          renderDeveloper(dev);
+        }
+        closeMenu();
+      });
+
+      // Initial state
+      if (authors.length === 0) {
+        labelSpan.textContent = "No developers found";
+        renderDeveloper(null);
+      } else {
+        labelSpan.textContent = "Select developer";
+        renderDeveloper(null);
+      }
+
+      populateList("");
+    })
+    .catch((err) => {
+      console.error("Failed to load analytics JSON (devs)", err);
+      panel.classList.add("activity-bar--error");
+    });
+}
 
   document.addEventListener("DOMContentLoaded", function () {
     const btnOverall = document.getElementById("btn-overall");
@@ -742,6 +1301,8 @@
           initActivityBar();
           initCiReliabilityCharts();
           initDeveloperPanel();
+          initCommitTypeChart();
+          initCommitTimeChart();
         });
     }
 

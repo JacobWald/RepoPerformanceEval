@@ -118,3 +118,82 @@
   max-height: 260px;
 }
 
+/* ---- Commit-time details block ---- */
+.commit-hours-details {
+  margin-top: 0.75rem;
+  background: var(--color-secondary);
+  border-radius: 12px;
+  padding: 0.75rem 1rem 1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+
+  /* fixed height + scroll */
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* hint + selected text */
+.commit-hours-hint {
+  font-size: 0.75rem;
+  margin: 0 0 0.25rem;
+  color: var(--color-primary-alt);
+}
+
+.commit-hours-selected {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--color-primary);
+}
+
+/* ---- Table styling ---- */
+.commit-hours-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+/* sticky header so it stays while body scrolls */
+.commit-hours-table thead {
+  position: sticky;
+  top: 0;
+  background: var(--color-primary-alt);
+  color: var(--color-primary);
+  z-index: 1;
+}
+
+.commit-hours-table th,
+.commit-hours-table td {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* numeric column right-aligned */
+.commit-hours-table th:last-child,
+.commit-hours-table td:last-child {
+  text-align: right;
+}
+
+/* zebra rows */
+.commit-hours-table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* hover highlight */
+.commit-hours-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* small scrollbar tweak (optional) */
+.commit-hours-details::-webkit-scrollbar {
+  width: 8px;
+}
+.commit-hours-details::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+}
+.commit-hours-details::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+

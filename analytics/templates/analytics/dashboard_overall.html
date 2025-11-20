@@ -112,3 +112,52 @@
     </div>
   </div>
 </section>
+
+<section class="ci-card">
+  <h2 class="ci-card-title">Commit Type Breakdown</h2>
+  <p class="ci-card-subtitle">
+    Categorized from commit messages: bug fixes, refactors, features, and other changes.
+  </p>
+
+  <div class="ci-charts-grid">
+    <div class="ci-chart">
+      <h3 class="ci-chart-title">Bug fixes vs refactors vs features</h3>
+      <canvas id="commit-type-pie"></canvas>
+    </div>
+  </div>
+</section>
+
+<section class="ci-card"></section>
+  <h2 class="ci-card-title">Commit Time Distribution</h2>
+  <p class="ci-card-subtitle">
+    How commits are spread across the day, and who is committing at each time.
+  </p>
+
+  <div class="ci-charts-grid">
+    <div class="ci-chart">
+      <h3 class="ci-chart-title">Commits by time window</h3>
+      <canvas id="commit-hours-bar"></canvas>
+
+      <div id="commit-hours-details" class="commit-hours-details">
+        <p class="commit-hours-hint">
+          Click a bar to see which developers commit in that time window.
+        </p>
+        <p class="commit-hours-selected" id="commit-hours-selected">
+          No time window selected yet.
+        </p>
+        <table class="commit-hours-table">
+          <thead>
+            <tr>
+              <th>Developer</th>
+              <th>Email</th>
+              <th>Commits in window</th>
+            </tr>
+          </thead>
+          <tbody id="commit-hours-dev-tbody">
+            <!-- rows inserted by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

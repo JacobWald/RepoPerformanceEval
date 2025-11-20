@@ -106,6 +106,62 @@
             <div class="dev-stat-subvalue" data-dev-stat="ci-runs">–</div>
           </div>
         </div>
+
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <!-- TODO: use a specific icon if you add one -->
+            <img
+              src="{% static 'icons/commits.svg' %}"
+              alt="Last commit icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">Last commit</div>
+            <!-- e.g. "5 days ago", "today" -->
+            <div class="dev-stat-value" data-dev-stat="last-active">–</div>
+            <!-- e.g. "on 2025-11-10" -->
+            <div class="dev-stat-subvalue" data-dev-stat="last-active-date">
+              –
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW TILE: Activity window (active days) -->
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <img
+              src="{% static 'icons/lines_added.svg' %}"
+              alt="Activity window icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">Activity in window</div>
+            <!-- e.g. "20 of 45 days" -->
+            <div class="dev-stat-value" data-dev-stat="active-days">–</div>
+            <!-- e.g. "Window: 45 days" -->
+            <div class="dev-stat-subvalue" data-dev-stat="window-length">–</div>
+          </div>
+        </div>
+
+        <!-- NEW TILE: Weekend activity -->
+        <div class="dev-stat-tile">
+          <div class="dev-stat-icon">
+            <img
+              src="{% static 'icons/lines_added.svg' %}"
+              alt="Weekend activity icon"
+              class="dev-stat-icon-img"
+            />
+          </div>
+          <div class="dev-stat-text">
+            <div class="dev-stat-label">Weekend activity</div>
+            <!-- e.g. "18.3% of commits" -->
+            <div class="dev-stat-value" data-dev-stat="weekend-share">–</div>
+            <!-- e.g. "12 weekend commits" -->
+            <div class="dev-stat-subvalue" data-dev-stat="weekend-count">–</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="small-activity-card">
