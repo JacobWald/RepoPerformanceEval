@@ -53,6 +53,7 @@
 </div>
 
 <script>
+  const REPO_URL = "{{ repo.url|escapejs }}";
   // -------Overall Project Summary Bar--------
   function initActivityBar() {
     const container = document.getElementById("activity-bar");
@@ -595,7 +596,7 @@
               const d = new Date(commit.committer_date);
               const date = d.toLocaleDateString();
               const time = d.toLocaleTimeString();
-              const commitUrl = `https://github.com/google/${data.repo_name}/commit/${commit.hash}`;
+              const commitUrl = `${REPO_URL}/commit/${commit.hash}`;
 
               const row = document.createElement("tr");
               //this is what i need to edit
