@@ -1,4 +1,4 @@
-@import url('../css/variables.css');
+@import url('variables.css');
 .auth-wrap {
     min-height: 100vh;
     display: flex;

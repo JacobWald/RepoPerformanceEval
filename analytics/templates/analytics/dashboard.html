@@ -1,7 +1,7 @@
 {% extends "analytics/base.html" %} {% load static %} {% block content %}
 <link rel="stylesheet" href="{% static 'styles/dashboard.css' %}" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="{% static 'styles/variables.css' %}" />
 
 
 <div class="dashboard-container">
@@ -347,6 +347,8 @@
   // -------Developer Specific Panel--------
   function initDeveloperPanel() {
     const panel = document.getElementById("developer-panel");
+    const smallCard = panel.querySelector(".small-activity-card");
+    const commitsCard = panel.querySelector(".commit-table").closest(".activity-card");
     if (!panel) {
       // Not on devs tab
       return;
@@ -413,8 +415,13 @@
             setStat("ci-failure-ratio", "–");
             setStat("ci-runs", "–");
             setHeading(null);
+            if (smallCard) smallCard.style.display = "none";
+            if (commitsCard) commitsCard.style.display = "none";
             return;
           }
+
+          if (smallCard) smallCard.style.display = "";
+          if (commitsCard) commitsCard.style.display = "";
 
           const name = dev.name || "Unknown";
           const email = dev.email || "–";

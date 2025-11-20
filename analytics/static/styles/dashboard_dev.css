@@ -1,4 +1,4 @@
-@import url('../css/variables.css');
+@import url('variables.css');
 
 
 .activity-card {
@@ -246,7 +246,7 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-  background: white;
+  background: var(--color-secondary-alt);
   color: var(--color-primary);
   border: 1px solid #333;
 }
@@ -263,4 +263,8 @@
 .commit-table a {
   color: var(--color-primary);
   text-decoration: underline;
+}
+
+.commit-table thead, tbody {
+  background: var(--color-secondary-alt)
 }
