@@ -1,6 +1,8 @@
 {% extends "analytics/base.html" %} {% load static %} {% block content %}
 <link rel="stylesheet" href="{% static 'styles/dashboard.css' %}" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{% static 'styles/variables.css' %}" />
+
 
 <div class="dashboard-container">
   <!-- Header -->
@@ -355,11 +357,13 @@
   // -------Developer Specific Panel--------
   function initDeveloperPanel() {
     const panel = document.getElementById("developer-panel");
+    const smallCard = panel.querySelector(".small-activity-card");
+    const commitsCard = panel.querySelector(".commit-table").closest(".activity-card");
     if (!panel) {
       // Not on devs tab
       return;
     }
-
+    let ciChart = null;
     const jsonUrl = panel.dataset.jsonUrl;
     console.log("dev panel jsonUrl:", jsonUrl);
     if (!jsonUrl) return;
@@ -421,8 +425,13 @@
             setStat("ci-failure-ratio", "–");
             setStat("ci-runs", "–");
             setHeading(null);
+            if (smallCard) smallCard.style.display = "none";
+            if (commitsCard) commitsCard.style.display = "none";
             return;
           }
+
+          if (smallCard) smallCard.style.display = "";
+          if (commitsCard) commitsCard.style.display = "";
 
           const name = dev.name || "Unknown";
           const email = dev.email || "–";
@@ -505,8 +514,107 @@
               ? `${ciFailures}/${totalCiRuns} (${failurePct}% failed)`
               : "n/a"
           );
+          
+
+          function renderCiBarChart(ciTotals, totalCiRuns) {
+            const ctx = document.getElementById("ciBarChart");
+
+            if (!ctx) {
+              console.warn("ciBarChart canvas not found");
+              return;
+            }
+
+            if (ciChart) {
+                ciChart.destroy(); // ❗ necessary for updating scales or data
+            }
+
+            const successCount = ciTotals.success || 0
+            const failedCount = ciTotals.failure || 0
+            const skippedCount = totalCiRuns - successCount - failedCount
+            //const barColor = styles.getPropertyValue("--color-secondary").trim();
+            const colorSecondary = getComputedStyle(document.documentElement)
+              .getPropertyValue('--color-secondary')
+              .trim();
+
+
+            ciChart = new Chart(ctx, {
+              type: "bar",
+              data: {
+                labels: ["Success", "Failed", "Skipped"],
+                datasets: [
+                  {
+                    label: "",
+                    data: [successCount, failedCount, skippedCount],
+                    backgroundColor: colorSecondary,
+                    //borderColor: 'white',
+                    //borderWidth: 1.5
+                    
+                  }
+                ]
+              },
+              options: {
+                indexAxis: "y", // ← MAKES THE CHART HORIZONTAL
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: false   // hides legend completely
+                  },
+                  title: {
+                    display: true,
+                    text: "CI Runs",
+                    color: colorSecondary,
+                    font: { size: 18 }
+                  }
+                },
+                scales: {
+                  x: {
+                    beginAtZero: true,
+                    ticks: { color: colorSecondary},
+                    grid: { color: colorSecondary }
+                  },
+                  y: {
+                    ticks: { color: colorSecondary},
+                    grid: { color:colorSecondary }
+                  }
+                }
+              }
+            });
+          }
+          function renderCommitTable(dev) {
+            const tbody = document.getElementById("commitTableBody");
+            tbody.innerHTML = ""; // clear old rows
+            
+            if (!dev || !Array.isArray(dev.commits) || dev.commits.length === 0) {
+              tbody.innerHTML = `
+                <tr><td colspan="6" style="text-align:center; opacity:0.7;">No commits available</td></tr>
+              `;
+              return;
+            }
+            dev.commits.forEach(commit => {
+              const d = new Date(commit.committer_date);
+              const date = d.toLocaleDateString();
+              const time = d.toLocaleTimeString();
+              const commitUrl = `https://github.com/google/${data.repo_name}/commit/${commit.hash}`;
+
+              const row = document.createElement("tr");
+              //this is what i need to edit
+              row.innerHTML = `
+                <td>${date}</td>
+                <td>${time}</td>
+                <td>${commit.msg || "—"}</td>
+                <td>${commit.ci_result || "—"}</td>
+                <td>+${commit.insertions || 0} / -${commit.deletions || 0}</td>
+                <td><a href="${commitUrl}" targets="_blank">View</a></td>
+              `;
+              //end of what i need to edit
+              tbody.appendChild(row);
+            });
+          }
 
           setHeading({ name, email });
+          renderCiBarChart(ciTotals, totalCiRuns);
+          renderCommitTable(dev);
         }
 
         // Populate the <ul> based on filter
