@@ -124,6 +124,7 @@ def main():
     # Top-level structure
     results = {
         "repo_name": repo_dir,
+        "repo_url": repoLink,
         "project_path": os.path.abspath(dest),
         "mined_at": datetime.now(timezone.utc).isoformat(),
         "mining_params": {
