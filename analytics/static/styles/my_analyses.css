@@ -70,4 +70,5 @@
   border: 1px solid currentColor;
   background-color: var(--color-secondary);
   color: var(--color-primary);
+  text-decoration: none !important;
 }
